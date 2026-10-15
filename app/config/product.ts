@@ -5,7 +5,12 @@ export type ProductMediaId =
   | "modelo-feminino"
   | "close-estampa"
   | "detalhe-acabamento"
-  | "lifestyle";
+  | "lifestyle"
+  | "embalagem-ilustrativa"
+  | "modelo-comicio-masculino"
+  | "manifesto-vermelho"
+  | "modelo-comicio-feminino"
+  | "multidao-brasilia";
 
 export type ProductMedia = {
   id: ProductMediaId;
@@ -31,8 +36,8 @@ export const product = {
   compareAtPriceInCents: undefined as number | undefined,
   availabilityNote: undefined as string | undefined,
   requiresSize: true,
-  // Publique somente os tamanhos cuja disponibilidade tenha sido confirmada.
-  availableSizes: [] as string[],
+  // Opções de tamanho fornecidas pelo responsável da loja.
+  availableSizes: ["PP", "P", "M", "G", "GG", "XG", "XXG", "XXXG"] as string[],
   // Publique somente medidas reais fornecidas pelo fabricante.
   sizeGuide: [] as SizeGuideRow[],
   media: [
@@ -85,6 +90,41 @@ export const product = {
       src: "/images/products/lifestyle-externo.webp",
       aspect: "portrait",
     },
+    {
+      id: "embalagem-ilustrativa",
+      label: "Apresentação ilustrativa",
+      alt: "Imagem ilustrativa da camiseta Somos Todos PT apresentada em uma caixa com identidade visual da marca.",
+      src: "/images/products/embalagem-ilustrativa.webp",
+      aspect: "portrait",
+    },
+    {
+      id: "modelo-comicio-masculino",
+      label: "Modelo em cenário de manifestação",
+      alt: "Imagem ilustrativa de modelo vestindo a camiseta vermelha Somos Todos PT diante de bandeiras do PT.",
+      src: "/images/products/modelo-comicio-masculino.webp",
+      aspect: "portrait",
+    },
+    {
+      id: "manifesto-vermelho",
+      label: "Manifesto visual",
+      alt: "Imagem ilustrativa de uma multidão com bandeiras vermelhas do PT em composição de campanha.",
+      src: "/images/products/manifesto-vermelho.webp",
+      aspect: "landscape",
+    },
+    {
+      id: "modelo-comicio-feminino",
+      label: "Modelo em comício",
+      alt: "Imagem ilustrativa de mulher vestindo a camiseta vermelha Somos Todos PT diante de bandeiras do PT.",
+      src: "/images/products/modelo-comicio-feminino.webp",
+      aspect: "portrait",
+    },
+    {
+      id: "multidao-brasilia",
+      label: "Grupo com a camiseta",
+      alt: "Imagem ilustrativa de grupo usando camisetas vermelhas Somos Todos PT em uma cena de campanha.",
+      src: "/images/products/multidao-brasilia.webp",
+      aspect: "landscape",
+    },
   ] satisfies ProductMedia[],
   designHighlights: [
     {
@@ -103,17 +143,19 @@ export const product = {
   confirmedSpecs: [
     { label: "Cor", value: "Vermelha" },
     { label: "Modelagem", value: "Unissex" },
+    { label: "Composição do tecido", value: "90% algodão, 10% poliéster" },
+    { label: "Tipo de impressão", value: "Sublimação" },
+    {
+      label: "Instruções de lavagem",
+      value: "Não lavar na máquina nem a seco. Não usar cloro, cândida ou outros alvejantes.",
+    },
   ],
-  pendingSpecLabels: [
-    "Composição do tecido",
-    "Tipo de impressão",
-    "Instruções de lavagem",
-  ],
+  pendingSpecLabels: [] as string[],
   faq: [
     {
       question: "Quais tamanhos estão disponíveis?",
       answer:
-        "Os tamanhos serão exibidos aqui assim que a disponibilidade for confirmada pelo responsável pela loja.",
+        "As opções de tamanho são PP, P, M, G, GG, XG, XXG e XXXG. Consulte o checkout para confirmar a disponibilidade do tamanho escolhido.",
     },
     {
       question: "Como escolho o tamanho correto?",
@@ -123,7 +165,7 @@ export const product = {
     {
       question: "Como funciona a finalização da compra?",
       answer:
-        "A compra é finalizada em um checkout externo da BravoPay. Antes do redirecionamento, a página mostra o tamanho selecionado. Caso o checkout ofereça variantes, confirme o mesmo tamanho lá.",
+        "A compra será finalizada em um checkout externo quando o endereço oficial da loja estiver confirmado e configurado. Antes de prosseguir, confira o domínio, o tamanho e as condições apresentados pelo checkout.",
     },
     {
       question: "Quais formas de pagamento são aceitas?",

@@ -56,3 +56,12 @@ test("aceita apenas URL HTTPS em host permitido e preserva a URL configurada", (
     url: "https://checkout.exemplo.com/pedido?origem=campanha",
   });
 });
+
+test("não autoriza o link informado enquanto o host não estiver explicitamente permitido", () => {
+  const result = getCheckoutUrl({
+    checkoutUrl: "https://pagseguropix.org/c/camiseta-somos-todos-pt",
+    allowedHosts: "pagamento.pagbank.com.br",
+  });
+
+  assert.equal(result.status, "unauthorized_host");
+});

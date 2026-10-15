@@ -18,8 +18,8 @@ export type CheckoutEnvironment = {
 
 export function getCheckoutUrl(
   environment: CheckoutEnvironment = {
-    checkoutUrl: process.env.NEXT_PUBLIC_BRAVOPAY_CHECKOUT_URL,
-    allowedHosts: process.env.NEXT_PUBLIC_BRAVOPAY_ALLOWED_HOSTS,
+    checkoutUrl: process.env.NEXT_PUBLIC_EXTERNAL_CHECKOUT_URL,
+    allowedHosts: process.env.NEXT_PUBLIC_EXTERNAL_CHECKOUT_ALLOWED_HOSTS,
   },
 ): CheckoutResult {
   const checkoutUrl = environment.checkoutUrl?.trim();

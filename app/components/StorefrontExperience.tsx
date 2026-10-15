@@ -125,7 +125,7 @@ export function StorefrontExperience() {
               <button type="button" className="button button--light button--large" onClick={() => beginCheckout("hero")}>
                 QUERO A MINHA CAMISETA <ArrowRight size={19} aria-hidden="true" />
               </button>
-              <p className="hero-section__fineprint">Escolha seu tamanho e finalize seu pedido no checkout externo quando ele estiver configurado.</p>
+              <p className="hero-section__fineprint">Escolha seu tamanho e confira os dados e as condições no checkout externo antes de concluir o pedido.</p>
             </div>
             <div className="hero-section__visual">
               <span className="hero-section__star" aria-hidden="true">✦</span>
@@ -141,7 +141,7 @@ export function StorefrontExperience() {
             <p>
               {isCommerceReady
                 ? "Cadastro comercial configurado. Confira as condições no checkout externo."
-                : "Cadastro comercial em preparação: preço, tamanhos, checkout, frete e políticas serão exibidos somente após confirmação."}
+                : "Preço, disponibilidade, medidas, frete e condições do checkout ainda estão em confirmação."}
             </p>
           </div>
         </section>
@@ -176,7 +176,7 @@ export function StorefrontExperience() {
             <div className="section-heading">
               <p className="eyebrow">DETALHES VISUAIS</p>
               <h2>Detalhes que fazem parte do visual.</h2>
-              <p>Gola, mangas, costuras e estampa apresentados pelas fotos do produto — sem acrescentar alegações técnicas não confirmadas.</p>
+            <p>Gola, mangas, costuras e estampa apresentados pelas fotos do produto; as imagens de campanha são ilustrativas.</p>
             </div>
             <div className="details-section__grid">
               <ProductMedia asset={product.media[5]} sizes="(max-width: 900px) 100vw, 50vw" />
@@ -209,7 +209,7 @@ export function StorefrontExperience() {
               <ShieldCheck size={23} aria-hidden="true" />
               <div>
                 <strong>Confirmação no checkout</strong>
-                <p>A escolha feita aqui é apresentada antes do redirecionamento. Sem suporte oficial a variantes, ela não é transferida automaticamente para a BravoPay.</p>
+                <p>A escolha feita aqui aparece no resumo antes do redirecionamento. Confirme o mesmo tamanho no checkout; esta seleção não é transmitida automaticamente.</p>
               </div>
             </aside>
           </div>
@@ -242,7 +242,7 @@ export function StorefrontExperience() {
             </div>
             <div className="process-list">
               <article><span>01</span><h3>Escolha informada</h3><p>O tamanho selecionado aparece no seu resumo antes do checkout.</p></article>
-              <article><span>02</span><h3>Checkout externo</h3><p>Quando configurado, o pedido é finalizado no ambiente externo da BravoPay.</p></article>
+              <article><span>02</span><h3>Checkout externo</h3><p>Confira o endereço, o tamanho e as condições antes de informar seus dados e concluir o pedido.</p></article>
               <article><span>03</span><h3>Condições reais</h3><p>Pagamento, frete, prazo e políticas serão mostrados somente quando disponíveis.</p></article>
             </div>
           </div>
