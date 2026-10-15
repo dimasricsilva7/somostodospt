@@ -40,7 +40,9 @@
   - HTTP local validou status 200 para a página, manifesto de rotas, robots, sitemap e imagens otimizadas.
   - Renderizações mobile (390 px) e desktop (1440 px) foram inspecionadas; não foi detectado overflow horizontal.
 
-- [ ] **GitHub e Vercel — GitHub executável, Vercel bloqueado por autorização disponível**
-  - **Em andamento:** commit e push para `dimasricsilva7/somostodospt` na branch principal `main`.
-  - **Bloqueado por autorização:** a consulta à Vercel não retornou equipes e o projeto `somostodospt-produtos` ainda não existe na conta acessível. Não será declarado deploy de produção sem URL e status reais.
-  - Após autorização Vercel: criar/vincular o projeto, configurar branch `main`, adicionar apenas variáveis reais, publicar e testar a URL retornada.
+- [x] **GitHub e Vercel — concluído**
+  - Commit `72fbd32de1155e8989d44d28e4af0cc50bae706d` enviado para `dimasricsilva7/somostodospt` na branch principal `main`.
+  - Projeto Vercel `somostodospt-produtos` criado e conectado ao repositório GitHub.
+  - Deploy de produção `dpl_F3cwfNLVqZwtADRMMZkytdygtLGH` em estado `READY`.
+  - URL pública validada: `https://somostodospt-produtos.vercel.app`.
+  - `NEXT_PUBLIC_SITE_URL` configurada na Vercel e redeploy validado com canonical, Open Graph, sitemap, robots, manifesto de rotas e imagem do produto.

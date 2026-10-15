@@ -76,5 +76,5 @@ public/
 
 - As dependências serão limitadas a Next.js, React, Tailwind e Lucide.
 - O checkout BravoPay depende de uma URL real e da lista de hosts autorizados fornecida pelo responsável.
-- O deploy Vercel depende de uma equipe/conta Vercel conectada: a consulta atual não retornou equipes.
+- O projeto Vercel `somostodospt-produtos` foi criado na conta autenticada, conectado ao GitHub e publicado em produção; o domínio padrão real foi usado para canonical, Open Graph e sitemap.
 - O repositório GitHub está vazio e acessível por CLI; o projeto WebDev está inicialmente em repositório gerenciado pela Manus, portanto o código também será versionado no repositório GitHub indicado pelo usuário.

@@ -140,7 +140,7 @@ O projeto deve se chamar **`somostodospt-produtos`** e apontar para `dimasricsil
 2. Crie ou vincule o projeto com o nome exato `somostodospt-produtos`.
 3. Conecte o repositório e configure a branch principal como produção.
 4. Cadastre as variáveis de ambiente reais na Vercel; não cadastre segredos em variáveis públicas.
-5. Faça o deploy e, após obter a URL real, defina `NEXT_PUBLIC_SITE_URL` e redeploye.
+5. O deploy inicial está publicado em `https://somostodospt-produtos.vercel.app` e `NEXT_PUBLIC_SITE_URL` já está configurada com essa URL para canonical, Open Graph e sitemap. Se um domínio próprio for conectado no futuro, atualize essa variável e redeploye.
 6. Ative o checkout somente após preencher URL e host BravoPay autorizados, preço e tamanhos reais.
 
 ## Informações pendentes para lançamento comercial
@@ -151,7 +151,7 @@ O projeto deve se chamar **`somostodospt-produtos`** e apontar para `dimasricsil
 - frete, prazo de entrega, pagamento e política de troca/devolução;
 - canal oficial de atendimento e dados legais da operação;
 - IDs reais de Meta, Google Ads e Google Analytics;
-- URL definitiva do domínio para SEO e compartilhamento.
+- Domínio próprio opcional para substituir o domínio padrão da Vercel; a URL padrão já está configurada para SEO e compartilhamento.
 
 ## Segurança
 
