@@ -38,14 +38,14 @@
 - [x] **Validação automatizada — concluída**
   - `pnpm lint` passou sem erros.
   - `pnpm typecheck` passou.
-  - `pnpm test` passou com 7 testes de checkout.
+  - `pnpm test` passou com 8 testes de checkout, incluindo a recusa do host de checkout enquanto não estiver explicitamente autorizado.
   - `pnpm build` passou com rotas estáticas `/`, `/privacidade`, `/termos`, `/trocas-e-devolucoes`, `robots.txt` e `sitemap.xml`.
   - HTTP local validou status 200 para a página, manifesto de rotas, robots, sitemap e imagens otimizadas.
   - Renderizações mobile (390 px) e desktop (1440 px) foram inspecionadas; não foi detectado overflow horizontal.
 
 - [x] **GitHub e Vercel — concluído**
-  - Commit `72fbd32de1155e8989d44d28e4af0cc50bae706d` enviado para `dimasricsilva7/somostodospt` na branch principal `main`.
+  - A atualização de produto e de mídia foi enviada à branch principal `main` do repositório `dimasricsilva7/somostodospt`, conectado à Vercel.
   - Projeto Vercel `somostodospt-produtos` criado e conectado ao repositório GitHub.
-  - Deploy de produção `dpl_F3cwfNLVqZwtADRMMZkytdygtLGH` em estado `READY`.
+  - Deploy automático de produção atualizado e confirmado em estado `READY`; a página e as cinco imagens novas respondem com HTTP 200.
   - URL pública validada: `https://somostodospt-produtos.vercel.app`.
   - `NEXT_PUBLIC_SITE_URL` configurada na Vercel e redeploy validado com canonical, Open Graph, sitemap, robots, manifesto de rotas e imagem do produto.
