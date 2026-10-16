@@ -3,16 +3,19 @@ import nodemailer from "nodemailer";
 import { log } from "@/app/lib/log";
 
 /**
- * Envio de e-mails transacionais por SMTP (compatível com GoDaddy).
- * Variáveis:
- * - EMAIL_USER  (e-mail completo, ex.: contato@seudominio.com)
- * - EMAIL_PASS  (senha do e-mail)
- * - EMAIL_FROM  (remetente, ex.: "Somos Todos PT <contato@seudominio.com>")
- * - EMAIL_HOST  (opcional; padrão smtpout.secureserver.net — GoDaddy)
- * - EMAIL_PORT  (opcional; padrão 465 SSL)
+ * Envio de e-mails transacionais. Dois modos (não exige caixa de e-mail):
+ *
+ * A) Resend (recomendado — só precisa do domínio, sem mailbox):
+ *    - RESEND_API_KEY
+ *    - EMAIL_FROM  (ex.: "Somos Todos PT <no-reply@somostodospt.shop>")
+ *
+ * B) SMTP (GoDaddy/outro, exige conta de e-mail):
+ *    - EMAIL_USER, EMAIL_PASS, EMAIL_FROM
+ *    - EMAIL_HOST (padrão smtpout.secureserver.net), EMAIL_PORT (padrão 465)
  */
 export function emailEnabled(): boolean {
-  return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_FROM);
+  if (!process.env.EMAIL_FROM) return false;
+  return Boolean(process.env.RESEND_API_KEY || (process.env.EMAIL_USER && process.env.EMAIL_PASS));
 }
 
 function transporter() {
@@ -26,10 +29,26 @@ function transporter() {
   });
 }
 
+async function sendViaResend(to: string, subject: string, html: string): Promise<boolean> {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, html }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = (await res.text().catch(() => "")).slice(0, 300);
+    log.error("email", "resend falhou", { status: res.status, error: text });
+    return false;
+  }
+  return true;
+}
+
 export async function sendMail(to: string, subject: string, html: string): Promise<boolean> {
   if (!emailEnabled()) return false;
   if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return false;
   try {
+    if (process.env.RESEND_API_KEY) return await sendViaResend(to, subject, html);
     await transporter().sendMail({ from: process.env.EMAIL_FROM, to, subject, html });
     return true;
   } catch (err) {
