@@ -127,6 +127,9 @@ model Order {
   cancelledAt       DateTime?
   lastCheckedAt     DateTime?
   purchaseTrackedAt DateTime?
+  /// Controle de e-mails transacionais (enviados uma única vez)
+  emailPaidAt       DateTime?
+  emailExpiredAt    DateTime?
 
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -224,6 +227,8 @@ model CheckoutLead {
   totalCents  Int      @default(0)
   /// Preenchido quando o lead vira pedido (deixa de ser abandonado)
   orderId     String?  @unique
+  /// E-mail de recuperação enviado (uma única vez)
+  emailSentAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

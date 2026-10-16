@@ -13,6 +13,7 @@ import { product } from "@/app/config/product";
 import { productPriceCents, sizeAvailable } from "@/app/config/catalog";
 import { sellableMerged } from "@/app/server/content";
 import { linkLeadToOrder } from "@/app/server/leads";
+import { emailOrderExpired, emailOrderPaid } from "@/app/server/emails";
 import { PIX_EXPIRATION_MINUTES, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
@@ -354,6 +355,7 @@ export async function applyPaymentSnapshot(
   log.info("payment", "status alterado", { order: order.orderNumber, from: order.status, to: mapped.order, source });
 
   if (mapped.order === "PAID") await onConfirmed(order.id);
+  if (mapped.order === "EXPIRED") await emailOrderExpired(order.id).catch(() => {});
 
   const updated = await db.order.findUnique({ where: { id: order.id } });
   return { order: updated, previousStatus: order.status, newStatus: mapped.order, changed: true };
@@ -367,6 +369,8 @@ async function onConfirmed(orderId: string) {
   const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { customer: true } });
   const tracked = await db.order.updateMany({ where: { id: order.id, purchaseTrackedAt: null }, data: { purchaseTrackedAt: new Date() } });
   if (!tracked.count) return;
+
+  await emailOrderPaid(order.id).catch(() => {}); // compra aprovada (transacional, independe de consentimento de marketing)
 
   if (!order.adsConsent) return; // sem consentimento de marketing: nada vai para a Meta
   const value = order.paidAmountCents ?? order.totalCents;
@@ -422,7 +426,10 @@ export async function syncOrder(order: Order, opts: { minIntervalMs?: number; so
   // Sem confirmação e PIX vencido há mais de 10 min → expira localmente.
   if (order.status === "PIX_GENERATED" && order.pixExpiresAt && new Date(order.pixExpiresAt).getTime() < Date.now() - 10 * 60_000) {
     const moved = await db.order.updateMany({ where: { id: order.id, status: "PIX_GENERATED" }, data: { status: "EXPIRED", paymentStatus: "EXPIRED", expiredAt: new Date() } });
-    if (moved.count) await logOrderEvent(order.id, "status_change", "PIX_GENERATED → EXPIRED (prazo do PIX encerrado)", undefined, "EXPIRED");
+    if (moved.count) {
+      await logOrderEvent(order.id, "status_change", "PIX_GENERATED → EXPIRED (prazo do PIX encerrado)", undefined, "EXPIRED");
+      await emailOrderExpired(order.id).catch(() => {});
+    }
     return (await db.order.findUnique({ where: { id: order.id } })) ?? order;
   }
   return order;
@@ -447,6 +454,30 @@ export async function renewPix(orderId: string): Promise<Order> {
   if (!moved.count) return db.order.findUniqueOrThrow({ where: { id: order.id } });
   await logOrderEvent(order.id, "pix_renewed", `Novo PIX solicitado pelo cliente (anterior: ${order.status})`, { previous_reference: order.externalReference, new_reference: ref }, "PENDING");
   return ensurePix(order.id);
+}
+
+/**
+ * Reconciliação server-side de PIX pendentes (cron). Consulta o gateway, confirma
+ * pagamentos que não chegaram por webhook e expira PIX vencidos (disparando e-mail).
+ */
+export async function reconcilePending(limit = 20) {
+  const pending = await db.order.findMany({
+    where: {
+      status: "PIX_GENERATED",
+      createdAt: { gte: new Date(Date.now() - 3 * 86_400_000) },
+      OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: new Date(Date.now() - 2 * 60_000) } }],
+    },
+    orderBy: { lastCheckedAt: { sort: "asc", nulls: "first" } },
+    take: limit,
+  });
+  let paid = 0;
+  let expired = 0;
+  for (const o of pending) {
+    const r = await syncOrder(o, { minIntervalMs: 0, source: "reconcile" });
+    if (r?.status === "PAID") paid++;
+    if (r?.status === "EXPIRED") expired++;
+  }
+  return { checked: pending.length, paid, expired };
 }
 
 // ───────────────────────── Acesso público ao pedido ─────────────────────────
