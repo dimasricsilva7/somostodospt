@@ -55,8 +55,9 @@ p { line-height: 1.6; }
 .button--header { min-height: 40px; padding: 10px 13px; font-size: .7rem; }
 .brand-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
 .brand-mark__symbol { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--red); color: white; }
-.brand-mark__type { display: grid; font-family: var(--display); font-size: .86rem; letter-spacing: -.045em; line-height: .78; }
-.brand-mark__type span { font-size: .72rem; letter-spacing: .04em; }
+.brand-mark__type { display: grid; gap: 2px; font-family: var(--display); font-size: .82rem; letter-spacing: -.02em; line-height: 1.02; }
+.brand-mark__type strong { display: block; }
+.brand-mark__type span { display: block; font-size: .7rem; letter-spacing: .04em; }
 .brand-mark--inverse { color: white; }
 .brand-mark--inverse .brand-mark__symbol { background: white; color: var(--red); }
 
@@ -298,9 +299,10 @@ p { line-height: 1.6; }
 .catalog-card { display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid var(--line); transition: box-shadow .2s ease, transform .2s ease; }
 .catalog-card:hover { box-shadow: 0 16px 38px rgb(75 0 8 / .12); transform: translateY(-3px); }
 .catalog-card--soon { opacity: .9; }
-.catalog-card__media { position: relative; aspect-ratio: 1 / 1; overflow: hidden; background: #f3eceb; }
-.catalog-card__media .product-media { width: 100%; height: 100%; aspect-ratio: auto; }
-.catalog-card__media .product-media__image { object-fit: cover; }
+.catalog-card__media { position: relative; aspect-ratio: 1 / 1; overflow: hidden; background: #fff; }
+.catalog-card__media .product-media { width: 100%; height: 100%; aspect-ratio: auto; background: #fff; }
+/* contain: mostra a camiseta inteira, sem cortar a estampa */
+.catalog-card__media .product-media__image { object-fit: contain; padding: 6px; }
 .catalog-card__placeholder { display: grid; place-content: center; justify-items: center; gap: 8px; width: 100%; height: 100%; color: #a98f90; font-size: .8rem; font-weight: 700; }
 .catalog-card__badge { position: absolute; top: 12px; left: 12px; padding: 5px 11px; background: var(--ink); color: #fff; font-size: .66rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .catalog-card__body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 18px 18px 20px; }
@@ -318,11 +320,11 @@ p { line-height: 1.6; }
   .collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 }
 @media (max-width: 560px) {
-  .collection-grid { grid-template-columns: 1fr; gap: 16px; }
-  .catalog-card { flex-direction: row; }
-  .catalog-card__media { width: 132px; flex: 0 0 132px; aspect-ratio: auto; }
-  .catalog-card__body { padding: 14px; }
-  .catalog-card__price { font-size: 1.25rem; }
+  /* 1 coluna, card na vertical: imagem grande no topo (camiseta inteira visível) e dados embaixo */
+  .collection-grid { grid-template-columns: 1fr; gap: 18px; }
+  .catalog-card__media { aspect-ratio: 4 / 3; }
+  .catalog-card__body { padding: 16px; }
+  .catalog-card__price { font-size: 1.4rem; }
 }
 
 /* ───────────────────────── Painel administrativo ───────────────────────── */
