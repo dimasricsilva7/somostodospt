@@ -23,7 +23,13 @@ export const shipping = {
   mode: "free" as "free" | "flat",
   cents: 0,
   label: "Frete grátis para todo o Brasil",
-  etaText: "" as string, // prazo de entrega — preencher só com prazo real combinado
+  etaText: "Entrega em 2 a 3 dias úteis", // prazo informado pelo responsável (2026-10-16)
+} as const;
+
+/** Barra de aviso no topo do site e do checkout (condições comerciais reais). */
+export const announcement = {
+  enabled: true,
+  text: "FRETE GRÁTIS para todo o Brasil • Entrega em 2 a 3 dias úteis",
 } as const;
 
 export function shippingCents(): number {

@@ -170,6 +170,11 @@ p { line-height: 1.6; }
 @keyframes stpt-spin { to { transform: rotate(360deg); } }
 .spin { animation: stpt-spin 1s linear infinite; }
 
+.announce-bar { background: var(--green); color: #fff; }
+.announce-bar__inner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 0; font-size: .8rem; font-weight: 800; letter-spacing: .01em; text-align: center; }
+.announce-bar svg { flex: 0 0 auto; }
+@media (max-width: 480px) { .announce-bar__inner { font-size: .72rem; gap: 6px; } }
+
 .urgency-bar { background: var(--ink); color: #fff; }
 .urgency-bar__inner { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 0; font-size: .82rem; font-weight: 800; text-align: center; }
 .urgency-bar svg { flex: 0 0 auto; color: var(--yellow); }

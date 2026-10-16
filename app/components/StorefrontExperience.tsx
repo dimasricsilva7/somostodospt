@@ -4,6 +4,7 @@ import { ArrowRight, ShoppingBag } from "lucide-react";
 import { product } from "@/app/config/product";
 import type { CatalogProduct } from "@/app/config/catalog";
 import type { SiteTexts } from "@/app/types/content";
+import { AnnounceBar } from "./AnnounceBar";
 import { BrandMark } from "./BrandMark";
 import { CatalogCard } from "./CatalogCard";
 import { CookieConsent } from "./CookieConsent";
@@ -20,6 +21,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
   return (
     <>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <AnnounceBar />
       <UrgencyBar />
       <header className="site-header">
         <div className="container site-header__inner">

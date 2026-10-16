@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Lock, Minus, Plus, ShieldCheck } from "lucide-react
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { AnnounceBar } from "@/app/components/AnnounceBar";
 import { BrandMark } from "@/app/components/BrandMark";
 import { ProductMedia } from "@/app/components/ProductMedia";
 import { formatPrice, type ProductMedia as ProductMediaType } from "@/app/config/product";
@@ -136,6 +137,7 @@ export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; i
 
   return (
     <div className="checkout-shell">
+      <AnnounceBar />
       <header className="checkout-top">
         <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
         <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>
