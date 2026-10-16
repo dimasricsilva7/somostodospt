@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const SCANNER_PATH =
   /^\/(wp-admin|wp-login\.php|wp-content|wp-includes|wp-json|xmlrpc\.php|\.env|\.git|\.aws|\.ssh|phpmyadmin|pma|myadmin|administrator|cgi-bin|config\.(php|json|ya?ml)|backup|dump\.sql|.*\.(php|asp|aspx|jsp|bak|old|swp)$)/i;
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (SCANNER_PATH.test(pathname)) {
     return new NextResponse(null, { status: 404 });
