@@ -1,67 +1,101 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getCheckoutUrl } from "../app/lib/checkout";
+import { computeTotals, discountPct, formatOrderNumber, MIN_PIX_CENTS } from "../app/lib/pricing";
+import { isValidCep, isValidCpf, isValidPhone, maskCpf, maskPhone, onlyDigits } from "../app/lib/validators";
+import { checkoutSchema } from "../app/lib/validation";
 
-test("retorna estado claro quando não há URL de checkout", () => {
-  const result = getCheckoutUrl({ allowedHosts: "checkout.exemplo.com" });
-  assert.equal(result.status, "missing_url");
+// ───────────── Preço / totais ─────────────
+
+test("computeTotals soma subtotal, frete e total", () => {
+  const t = computeTotals([{ unitPriceCents: 7990, quantity: 2 }], 0);
+  assert.equal(t.subtotalCents, 15980);
+  assert.equal(t.shippingCents, 0);
+  assert.equal(t.totalCents, 15980);
 });
 
-test("recusa URL inválida", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "não-é-uma-url",
-    allowedHosts: "checkout.exemplo.com",
-  });
-  assert.equal(result.status, "invalid_url");
+test("computeTotals aplica frete e limita desconto ao subtotal", () => {
+  const t = computeTotals([{ unitPriceCents: 5000, quantity: 1 }], 1500, 99999);
+  assert.equal(t.discountCents, 5000);
+  assert.equal(t.totalCents, 1500); // 5000 - 5000 + 1500
 });
 
-test("recusa checkout sem HTTPS", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "http://checkout.exemplo.com/pedido",
-    allowedHosts: "checkout.exemplo.com",
-  });
-  assert.equal(result.status, "insecure_url");
+test("discountPct só existe com preço antigo maior", () => {
+  assert.equal(discountPct(7990, 9990), 20);
+  assert.equal(discountPct(7990, 7990), null);
+  assert.equal(discountPct(7990, null), null);
 });
 
-test("recusa URL que contém credenciais", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "https://usuario:senha@checkout.exemplo.com/pedido",
-    allowedHosts: "checkout.exemplo.com",
-  });
-  assert.equal(result.status, "credentials_not_allowed");
+test("formatOrderNumber segue o padrão PTxxxxx-ano", () => {
+  assert.match(formatOrderNumber(2026, 27684), /^PT\d{5}-2026$/);
 });
 
-test("exige lista explícita de hosts autorizados", () => {
-  const result = getCheckoutUrl({ checkoutUrl: "https://checkout.exemplo.com/pedido" });
-  assert.equal(result.status, "missing_allowed_hosts");
+test("valor mínimo do PIX é R$ 5,00", () => {
+  assert.equal(MIN_PIX_CENTS, 500);
 });
 
-test("recusa host fora da lista permitida", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "https://destino-desconhecido.com/pedido",
-    allowedHosts: "checkout.exemplo.com",
-  });
-  assert.equal(result.status, "unauthorized_host");
+// ───────────── Validadores ─────────────
+
+test("CPF válido e inválido", () => {
+  assert.equal(isValidCpf("390.533.447-05"), true);
+  assert.equal(isValidCpf("111.111.111-11"), false);
+  assert.equal(isValidCpf("123"), false);
 });
 
-test("aceita apenas URL HTTPS em host permitido e preserva a URL configurada", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "https://checkout.exemplo.com/pedido?origem=campanha",
-    allowedHosts: "outro.exemplo.com, checkout.exemplo.com",
-  });
-
-  assert.deepEqual(result, {
-    status: "ready",
-    host: "checkout.exemplo.com",
-    url: "https://checkout.exemplo.com/pedido?origem=campanha",
-  });
+test("telefone celular e CEP", () => {
+  assert.equal(isValidPhone("(11) 98888-7777"), true);
+  assert.equal(isValidPhone("1198"), false);
+  assert.equal(isValidCep("01001-000"), true);
+  assert.equal(isValidCep("123"), false);
 });
 
-test("não autoriza o link informado enquanto o host não estiver explicitamente permitido", () => {
-  const result = getCheckoutUrl({
-    checkoutUrl: "https://pagseguropix.org/c/camiseta-somos-todos-pt",
-    allowedHosts: "pagamento.pagbank.com.br",
-  });
+test("máscaras não deixam lixo", () => {
+  assert.equal(onlyDigits("(11) 9.8888-7777"), "11988887777");
+  assert.equal(maskCpf("39053344705"), "390.533.447-05");
+  assert.equal(maskPhone("11988887777"), "(11) 98888-7777");
+});
 
-  assert.equal(result.status, "unauthorized_host");
+// ───────────── Schema do checkout ─────────────
+
+const basePayload = {
+  checkoutToken: "a1b2c3d4e5f6a7b8",
+  productSlug: "somos-todos-pt",
+  size: "M",
+  quantity: 2,
+  customer: { name: "Maria Silva", email: "MARIA@Exemplo.com", phone: "(11) 98888-7777", cpf: "390.533.447-05" },
+  address: { cep: "01001-000", street: "Rua X", number: "10", district: "Centro", city: "São Paulo", state: "sp" },
+  marketingConsent: true,
+};
+
+test("checkout válido normaliza e-mail, UF, telefone e CPF", () => {
+  const parsed = checkoutSchema.safeParse(basePayload);
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.equal(parsed.data.customer.email, "maria@exemplo.com");
+    assert.equal(parsed.data.customer.phone, "11988887777");
+    assert.equal(parsed.data.customer.cpf, "39053344705");
+    assert.equal(parsed.data.address.state, "SP");
+    assert.equal(parsed.data.size, "M");
+  }
+});
+
+test("checkout rejeita tamanho fora da lista", () => {
+  const parsed = checkoutSchema.safeParse({ ...basePayload, size: "ZZ" });
+  assert.equal(parsed.success, false);
+});
+
+test("checkout rejeita productSlug ausente ou inválido", () => {
+  const semSlug = { ...basePayload } as Record<string, unknown>;
+  delete semSlug.productSlug;
+  assert.equal(checkoutSchema.safeParse(semSlug).success, false);
+  assert.equal(checkoutSchema.safeParse({ ...basePayload, productSlug: "Slug Inválido!" }).success, false);
+});
+
+test("checkout rejeita CPF inválido", () => {
+  const parsed = checkoutSchema.safeParse({ ...basePayload, customer: { ...basePayload.customer, cpf: "111.111.111-11" } });
+  assert.equal(parsed.success, false);
+});
+
+test("checkout rejeita UF inexistente", () => {
+  const parsed = checkoutSchema.safeParse({ ...basePayload, address: { ...basePayload.address, state: "ZZ" } });
+  assert.equal(parsed.success, false);
 });

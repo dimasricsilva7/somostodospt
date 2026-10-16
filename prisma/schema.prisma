@@ -1,0 +1,241 @@
+// Somos Todos PT — schema PostgreSQL (Neon).
+// MVP enxuto baseado na arquitetura comprovada do CLEARFINGER: pedidos, pagamentos
+// PIX (BravoPay), webhooks idempotentes e atribuição de marketing.
+// Valores monetários sempre em centavos (Int). O pedido guarda um snapshot do que foi
+// vendido (produto, tamanho, preço) para o histórico nunca mudar depois.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String
+  cpf       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+/// PIX segue o ciclo do gateway (BravoPay). A entrega fica em `fulfillmentStatus`.
+enum OrderStatus {
+  PENDING
+  PIX_GENERATED
+  PAID
+  EXPIRED
+  CANCELLED
+  REFUNDED
+  CHARGEBACK
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  REFUNDED
+  CHARGEBACK
+  FAILED
+}
+
+enum FulfillmentStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+}
+
+model Order {
+  id                String            @id @default(cuid())
+  seq               Int               @unique @default(autoincrement())
+  orderNumber       String?           @unique
+  customerId        String
+  customer          Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  /// Snapshot do cliente e do endereço no momento da compra
+  customerSnapshot  Json
+  shippingAddress   Json?
+
+  // Item (modelo da coleção + variante de tamanho) — snapshot
+  productSlug       String?
+  productName       String
+  sku               String
+  /// Tamanho da camiseta escolhido (PP..XXXG). Fica associado ao pedido até a confirmação.
+  size              String
+  quantity          Int               @default(1)
+  unitPriceCents    Int
+  listPriceCents    Int?
+
+  status            OrderStatus       @default(PENDING)
+  paymentStatus     PaymentStatus     @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  trackingCode      String?
+
+  subtotalCents     Int
+  discountCents     Int               @default(0)
+  shippingCents     Int               @default(0)
+  totalCents        Int
+
+  paymentProvider   String?           @default("bravopay")
+  transactionId     String?           @unique
+  externalReference String?           @unique
+  pixCopyPaste      String?
+  pixExpiresAt      DateTime?
+  paymentError      String?
+  paidAmountCents   Int?
+  feeCents          Int?
+  netCents          Int?
+
+  /// Idempotência de duplo clique: mesmo token devolve o mesmo pedido
+  checkoutToken     String?           @unique
+  /// Token secreto para o cliente acessar a página do pedido por link
+  accessToken       String            @unique
+  /// event_id usado no Pixel e no CAPI (deduplicação do Purchase)
+  metaEventId       String?
+  adsConsent        Boolean           @default(false)
+
+  // Atribuição (last touch + click ids)
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  utmContent        String?
+  utmTerm           String?
+  utmId             String?
+  fbclid            String?
+  gclid             String?
+  ttclid            String?
+  fbp               String?
+  fbc               String?
+  landingPage       String?
+  referrer          String?
+  sessionId         String?
+  visitorId         String?
+  device            String?
+  userAgent         String?
+  ipHash            String?
+  channel           String?
+
+  paidAt            DateTime?
+  expiredAt         DateTime?
+  cancelledAt       DateTime?
+  lastCheckedAt     DateTime?
+  purchaseTrackedAt DateTime?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  payments          Payment[]
+  events            PaymentEvent[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([paidAt])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider      String        @default("bravopay")
+  transactionId String        @unique
+  method        String        @default("PIX")
+  status        PaymentStatus @default(PENDING)
+  amountCents   Int
+  feeCents      Int?
+  netCents      Int?
+  paidAt        DateTime?
+  metadata      Json?
+  tracking      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([orderId])
+}
+
+/// Linha do tempo do pedido/pagamento (requisições, respostas, webhooks, mudanças de status).
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String
+  status    String?
+  message   String?
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// ───────────────────────── Conteúdo editável no admin ─────────────────────────
+
+/// Imagens enviadas pelo admin (bytes no Postgres, servidas por /media/[id]). Padrão MONTEZ/CLEARFINGER.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  filename  String
+  mimeType  String
+  data      Bytes
+  size      Int?
+  createdAt DateTime @default(now())
+}
+
+/// Sobrescreve os dados do catálogo (app/config/catalog.ts) por modelo. Vazio = usa o padrão do código.
+model ProductContent {
+  slug                String   @id
+  name                String?
+  description         String?
+  priceCents          Int?
+  compareAtPriceCents Int?
+  /// Lista de tamanhos disponíveis, ex.: ["PP","P","M"]
+  sizes               Json?
+  active              Boolean?
+  /// IDs de MediaAsset: imagem principal + galeria
+  mainImageId         String?
+  galleryIds          Json?
+  sortOrder           Int?
+  updatedAt           DateTime @updatedAt
+}
+
+/// Textos editáveis da loja (hero, títulos, etc.) — chave → valor JSON.
+model SiteContent {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+/// Registro de webhooks — eventId único garante idempotência.
+model WebhookEvent {
+  id             String        @id @default(cuid())
+  provider       String        @default("bravopay")
+  eventId        String        @unique
+  eventType      String
+  status         WebhookStatus @default(RECEIVED)
+  transactionId  String?
+  orderId        String?
+  previousStatus String?
+  newStatus      String?
+  result         String?
+  payloadHash    String
+  payload        Json
+  error          String?
+  attempts       Int           @default(1)
+  receivedAt     DateTime      @default(now())
+  processedAt    DateTime?
+
+  @@index([receivedAt])
+  @@index([transactionId])
+}
