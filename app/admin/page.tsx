@@ -11,14 +11,15 @@ export const dynamic = "force-dynamic";
 
 async function orderStats() {
   try {
-    const [total, paid, pending] = await Promise.all([
+    const [total, paid, pending, revenue] = await Promise.all([
       db.order.count(),
       db.order.count({ where: { status: "PAID" } }),
       db.order.count({ where: { status: { in: ["PENDING", "PIX_GENERATED"] } } }),
+      db.order.aggregate({ _sum: { totalCents: true }, where: { status: "PAID" } }),
     ]);
-    return { total, paid, pending, ok: true as const };
+    return { total, paid, pending, revenueCents: revenue._sum.totalCents ?? 0, ok: true as const };
   } catch {
-    return { total: 0, paid: 0, pending: 0, ok: false as const };
+    return { total: 0, paid: 0, pending: 0, revenueCents: 0, ok: false as const };
   }
 }
 
@@ -32,6 +33,7 @@ export default async function AdminHome() {
         <h1>Painel Somos Todos PT</h1>
         <div className="admin-top__actions">
           <Link href="/" className="admin-link" target="_blank">Ver a loja ↗</Link>
+          <Link href="/admin/pedidos" className="admin-link">Pedidos</Link>
           <Link href="/admin/textos" className="admin-link">Textos da página</Link>
           <LogoutButton />
         </div>
@@ -41,11 +43,12 @@ export default async function AdminHome() {
         <p className="admin-warn">O banco de dados ainda não está acessível — as edições só serão salvas depois que o banco estiver configurado na Vercel.</p>
       )}
 
-      <section className="admin-stats">
+      <Link href="/admin/pedidos" className="admin-stats admin-stats--4">
+        <div><strong>{formatPrice(stats.revenueCents)}</strong><span>Receita (pagos)</span></div>
         <div><strong>{stats.total}</strong><span>Pedidos</span></div>
         <div><strong>{stats.paid}</strong><span>Pagos</span></div>
         <div><strong>{stats.pending}</strong><span>Aguardando PIX</span></div>
-      </section>
+      </Link>
 
       <h2 className="admin-h2">Modelos</h2>
       <div className="admin-products">
