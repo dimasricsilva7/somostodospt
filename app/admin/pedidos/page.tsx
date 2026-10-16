@@ -40,7 +40,7 @@ export default async function AdminOrdersPage() {
               {rows.map((o) => (
                 <tr key={o.orderNumber}>
                   <td><Link href={`/admin/pedidos/${o.orderNumber}`} className="admin-link">{o.orderNumber}</Link></td>
-                  <td>{new Date(o.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                  <td>{new Date(o.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                   <td>{o.customerName}</td>
                   <td>{o.quantity}x {o.productName} · {o.size}</td>
                   <td>{formatPrice(o.totalCents)}</td>

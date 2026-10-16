@@ -36,7 +36,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ n
           <h2 className="admin-h2">Resumo</h2>
           <p><strong>{order.quantity}x {order.productName}</strong> · Tamanho {order.size}</p>
           <p>Total: <strong>{formatPrice(order.totalCents)}</strong> · Pagamento: {ORDER_STATUS_LABEL[order.status] ?? order.status}</p>
-          <p className="admin-muted">Criado em {order.createdAt.toLocaleString("pt-BR")}{order.paidAt ? ` · Pago em ${order.paidAt.toLocaleString("pt-BR")}` : ""}</p>
+          <p className="admin-muted">Criado em {order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}{order.paidAt ? ` · Pago em ${order.paidAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}</p>
         </section>
 
         <section className="admin-box">
@@ -58,7 +58,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ n
           <ul className="admin-timeline">
             {order.events.map((e) => (
               <li key={e.id}>
-                <span>{e.createdAt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{e.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
                 <span>{e.message}</span>
               </li>
             ))}

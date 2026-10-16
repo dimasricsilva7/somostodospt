@@ -31,7 +31,7 @@ export default async function AdminAbandonedPage() {
                 const wa = l.phone ? `https://wa.me/55${onlyDigits(l.phone)}` : null;
                 return (
                   <tr key={i}>
-                    <td>{new Date(l.updatedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                    <td>{new Date(l.updatedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                     <td>{l.name ?? "—"}</td>
                     <td>{l.email ?? ""}{l.email && l.phone ? " · " : ""}{l.phone ?? ""}</td>
                     <td>{l.productName ?? "—"}{l.size ? ` · ${l.size}` : ""}</td>
