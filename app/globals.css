@@ -55,8 +55,9 @@ p { line-height: 1.6; }
 .button--header { min-height: 40px; padding: 10px 13px; font-size: .7rem; }
 .brand-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
 .brand-mark__symbol { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--red); color: white; }
-.brand-mark__type { display: grid; font-family: var(--display); font-size: .86rem; letter-spacing: -.045em; line-height: .78; }
-.brand-mark__type span { font-size: .72rem; letter-spacing: .04em; }
+.brand-mark__type { display: grid; gap: 1px; font-family: var(--display); font-size: .86rem; letter-spacing: -.045em; line-height: .96; }
+.brand-mark__type strong { display: block; }
+.brand-mark__type span { display: block; font-size: .72rem; letter-spacing: .04em; }
 .brand-mark--inverse { color: white; }
 .brand-mark--inverse .brand-mark__symbol { background: white; color: var(--red); }
 
