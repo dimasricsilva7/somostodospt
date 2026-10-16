@@ -58,6 +58,7 @@ test("máscaras não deixam lixo", () => {
 
 const basePayload = {
   checkoutToken: "a1b2c3d4e5f6a7b8",
+  productSlug: "somos-todos-pt",
   size: "M",
   quantity: 2,
   customer: { name: "Maria Silva", email: "MARIA@Exemplo.com", phone: "(11) 98888-7777", cpf: "390.533.447-05" },
@@ -80,6 +81,13 @@ test("checkout válido normaliza e-mail, UF, telefone e CPF", () => {
 test("checkout rejeita tamanho fora da lista", () => {
   const parsed = checkoutSchema.safeParse({ ...basePayload, size: "ZZ" });
   assert.equal(parsed.success, false);
+});
+
+test("checkout rejeita productSlug ausente ou inválido", () => {
+  const semSlug = { ...basePayload } as Record<string, unknown>;
+  delete semSlug.productSlug;
+  assert.equal(checkoutSchema.safeParse(semSlug).success, false);
+  assert.equal(checkoutSchema.safeParse({ ...basePayload, productSlug: "Slug Inválido!" }).success, false);
 });
 
 test("checkout rejeita CPF inválido", () => {

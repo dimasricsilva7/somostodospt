@@ -10,7 +10,8 @@ import { computeTotals, formatOrderNumber, MIN_PIX_CENTS } from "@/app/lib/prici
 import { canTransition, isPaidStatus } from "@/app/lib/order-status";
 import { sendCapiEvent, fbcFromClickId } from "@/app/lib/meta/capi";
 import { product } from "@/app/config/product";
-import { PIX_EXPIRATION_MINUTES, priceReady, shippingCents } from "@/app/config/commerce";
+import { productPriceCents, sellableProduct, sizeAvailable } from "@/app/config/catalog";
+import { PIX_EXPIRATION_MINUTES, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
 
@@ -102,10 +103,13 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
   if (bravopayMode() === "disabled") {
     throw new CheckoutError("O pagamento via PIX está indisponível no momento. Tente novamente em alguns minutos.", 503);
   }
-  if (!priceReady() || typeof product.priceInCents !== "number") {
-    // Preço não configurado: não inventamos valor nem cobramos.
-    throw new CheckoutError("A loja ainda não ativou o preço desta camiseta. A compra estará disponível em breve.", 503);
-  }
+
+  // Modelo escolhido: revalidado no servidor (ativo, com arte e preço). Nunca confiamos no navegador.
+  const model = sellableProduct(input.productSlug);
+  if (!model) throw new CheckoutError("Este modelo não está disponível para compra no momento.", 409);
+  if (!sizeAvailable(model, input.size)) throw new CheckoutError("Este tamanho não está disponível para o modelo escolhido.", 409, { size: "Tamanho indisponível" });
+  const price = productPriceCents(model);
+  if (price === undefined) throw new CheckoutError("A loja ainda não ativou o preço deste modelo. A compra estará disponível em breve.", 503);
 
   // Anti-abuso persistente (vale entre instâncias): impede gerar cobranças PIX em massa.
   if (isProductionDeploy()) {
@@ -121,8 +125,8 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
   }
 
   const quantity = Math.min(5, Math.max(1, input.quantity));
-  const unitPriceCents = product.priceInCents;
-  const listPriceCents = typeof product.compareAtPriceInCents === "number" ? product.compareAtPriceInCents : null;
+  const unitPriceCents = price;
+  const listPriceCents = typeof model.compareAtPriceInCents === "number" ? model.compareAtPriceInCents : null;
   const totals = computeTotals([{ unitPriceCents, quantity }], shippingCents());
   if (totals.totalCents < MIN_PIX_CENTS) throw new CheckoutError("O valor mínimo para pagamento via PIX é R$ 5,00.");
 
@@ -143,8 +147,9 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
           customerId: customer.id,
           customerSnapshot,
           shippingAddress,
-          productName: product.name,
-          sku: product.sku,
+          productSlug: model.slug,
+          productName: model.name,
+          sku: model.sku,
           size: input.size,
           quantity,
           unitPriceCents,
@@ -197,7 +202,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
         fbc: order.fbc ?? fbcFromClickId(order.fbclid, order.createdAt),
         fbp: order.fbp,
       },
-      customData: { currency: "BRL", value: order.totalCents / 100, content_type: "product", content_ids: [product.sku], contents: [{ id: product.sku, quantity, item_price: unitPriceCents / 100 }], payment_type: "pix" },
+      customData: { currency: "BRL", value: order.totalCents / 100, content_type: "product", content_ids: [model.sku], contents: [{ id: model.sku, quantity, item_price: unitPriceCents / 100 }], payment_type: "pix" },
     });
   }
   return { order: result, reused: false };

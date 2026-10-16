@@ -34,6 +34,7 @@ CREATE TABLE "Order" (
     "customerId" TEXT NOT NULL,
     "customerSnapshot" JSONB NOT NULL,
     "shippingAddress" JSONB,
+    "productSlug" TEXT,
     "productName" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
     "size" TEXT NOT NULL,

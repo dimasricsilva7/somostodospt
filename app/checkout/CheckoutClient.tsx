@@ -6,20 +6,30 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { BrandMark } from "@/app/components/BrandMark";
 import { ProductMedia } from "@/app/components/ProductMedia";
-import { product, formatPrice } from "@/app/config/product";
+import { formatPrice, type ProductMedia as ProductMediaType } from "@/app/config/product";
 import { MAX_QUANTITY, shipping, shippingCents } from "@/app/config/commerce";
 import { computeTotals } from "@/app/lib/pricing";
 import { maskCep, maskCpf, maskPhone, onlyDigits } from "@/app/lib/validators";
 import { buildClientContext, getConsentChoice, newEventId, track } from "@/app/lib/tracking";
 
+type CheckoutModel = {
+  slug: string;
+  name: string;
+  priceInCents: number;
+  compareAtPriceInCents?: number;
+  sizes: string[];
+  media: ProductMediaType;
+};
+
 type Fields = Record<string, string>;
 
+const CURRENCY = "BRL";
 const money = (c: number) => formatPrice(c) ?? "—";
 
-export function CheckoutClient({ initialSize }: { initialSize?: string }) {
+export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; initialSize?: string }) {
   const router = useRouter();
-  const sizes = product.availableSizes as readonly string[];
-  const unitPrice = product.priceInCents ?? 0;
+  const sizes = model.sizes;
+  const unitPrice = model.priceInCents;
 
   const [size, setSize] = useState<string>(initialSize ?? "");
   const [quantity, setQuantity] = useState(1);
@@ -37,7 +47,7 @@ export function CheckoutClient({ initialSize }: { initialSize?: string }) {
   useEffect(() => {
     startedAt.current = Date.now();
     checkoutToken.current = newEventId().replace(/-/g, "").slice(0, 32).padEnd(16, "0");
-    track("InitiateCheckout", { content_name: product.name, value: totals.totalCents / 100, currency: product.currency }, { eventId: newEventId(), once: true });
+    track("InitiateCheckout", { content_name: model.name, value: totals.totalCents / 100, currency: CURRENCY }, { eventId: newEventId(), once: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -83,8 +93,7 @@ export function CheckoutClient({ initialSize }: { initialSize?: string }) {
 
     const adsConsent = getConsentChoice() === "accepted";
     const paymentEventId = newEventId();
-    // AddPaymentInfo no navegador (mesmo event_id enviado ao servidor → deduplicação com o CAPI)
-    track("AddPaymentInfo", { value: totals.totalCents / 100, currency: product.currency, content_name: product.name }, { eventId: paymentEventId });
+    track("AddPaymentInfo", { value: totals.totalCents / 100, currency: CURRENCY, content_name: model.name }, { eventId: paymentEventId });
 
     try {
       const res = await fetch("/api/checkout", {
@@ -94,6 +103,7 @@ export function CheckoutClient({ initialSize }: { initialSize?: string }) {
           checkoutToken: checkoutToken.current,
           hp,
           elapsedMs: Date.now() - startedAt.current,
+          productSlug: model.slug,
           size,
           quantity,
           customer: { name: form.name, email: form.email, phone: form.phone, cpf: form.cpf },
@@ -133,7 +143,7 @@ export function CheckoutClient({ initialSize }: { initialSize?: string }) {
 
       <div className="checkout-grid">
         <form className="checkout-form" onSubmit={submit} noValidate>
-          <Link href="/" className="text-link checkout-back"><ArrowLeft size={15} aria-hidden="true" /> Voltar ao produto</Link>
+          <Link href="/" className="text-link checkout-back"><ArrowLeft size={15} aria-hidden="true" /> Trocar de modelo</Link>
           <h1>Finalizar compra</h1>
 
           <fieldset className="field-group">
@@ -223,9 +233,9 @@ export function CheckoutClient({ initialSize }: { initialSize?: string }) {
 
         <aside className="checkout-summary" aria-label="Resumo do pedido">
           <div className="summary-product">
-            <div className="summary-product__media"><ProductMedia asset={product.media[0]} sizes="90px" /></div>
+            <div className="summary-product__media"><ProductMedia asset={model.media} sizes="90px" /></div>
             <div>
-              <strong>{product.name}</strong>
+              <strong>{model.name}</strong>
               <span>Tamanho: {size || "a escolher"}</span>
               <span>Quantidade: {quantity}</span>
             </div>

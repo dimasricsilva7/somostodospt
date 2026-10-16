@@ -63,7 +63,8 @@ model Order {
   customerSnapshot  Json
   shippingAddress   Json?
 
-  // Item (produto único com variante de tamanho) — snapshot
+  // Item (modelo da coleção + variante de tamanho) — snapshot
+  productSlug       String?
   productName       String
   sku               String
   /// Tamanho da camiseta escolhido (PP..XXXG). Fica associado ao pedido até a confirmação.

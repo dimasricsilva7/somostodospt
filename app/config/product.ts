@@ -32,8 +32,8 @@ export const product = {
   shortName: "Camiseta vermelha — edição visual Lula",
   sku: "STPT-CAMISETA-VERMELHA",
   currency: "BRL",
-  // Preencha apenas com valores comerciais reais, em centavos. Ex.: 7990 para R$ 79,90.
-  priceInCents: undefined as number | undefined,
+  // Preço real informado pelo responsável (2026-10-16): R$ 49,90.
+  priceInCents: 4990 as number | undefined,
   compareAtPriceInCents: undefined as number | undefined,
   availabilityNote: undefined as string | undefined,
   requiresSize: true,
