@@ -1,123 +1,93 @@
-# Somos Todos PT — Landing Page de Produto
+# Somos Todos PT — Loja com checkout próprio (PIX)
 
-Landing page mobile-first para a camiseta Somos Todos PT. A página apresenta o produto, as opções de tamanho fornecidas, suas especificações confirmadas e uma galeria com imagens originais do responsável. O checkout externo exige HTTPS e uma allowlist explícita de domínio; o link informado nesta atualização permanece **desativado até confirmação do responsável**.
+Loja de produto único (camiseta **Somos Todos PT**) com landing page de conversão e
+**checkout próprio integrado à BravoPay (PIX)**. O tamanho escolhido acompanha o pedido
+do início ao fim, o pagamento é confirmado pelo gateway via webhook e o status é sempre
+lido do servidor — nunca do navegador.
 
-## Stack e execução
+## Stack
 
-- Next.js App Router, React 19, TypeScript e Tailwind CSS 4
-- Lucide React e `next/image`
-- Testes unitários com `tsx --test`
+- Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · pnpm
+- Prisma + PostgreSQL (Neon)
+- BravoPay (PIX) · Meta Pixel + Conversions API · `qrcode`
+- Testes com `node --test` + `tsx`
 
 ```bash
 pnpm install
-pnpm dev
+pnpm db:generate
+pnpm dev            # http://localhost:3000
 ```
 
-Acesse `http://localhost:3000`. Para validar uma versão de produção:
+Validação completa:
 
 ```bash
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm start
 ```
+
+## Fluxo de compra
+
+1. Landing (`/`) → cliente escolhe o tamanho e clica em comprar.
+2. Checkout próprio (`/checkout?tam=M`) → confirma/troca o tamanho, quantidade, dados e endereço.
+3. `POST /api/checkout` valida tudo no servidor, **recalcula o total** e cria o pedido.
+4. O backend cria a cobrança PIX real na BravoPay (`POST /transactions`) e guarda o `copia e cola`.
+5. Cliente vai para `/pedido/<numero>?t=<token>` → vê **QR Code + copia e cola + valor + expiração**.
+6. A página consulta `GET /api/orders/status` (que confirma no gateway) a cada poucos segundos.
+7. Quando a BravoPay confirma (webhook `POST /api/webhooks/bravopay`, assinatura HMAC), o pedido vira `PAID`.
+8. Só então o evento **Purchase** (Pixel + CAPI, deduplicado por `event_id`) é disparado.
+
+O tamanho fica gravado no pedido (`Order.size`) e no snapshot — persiste até a confirmação.
 
 ## Estrutura
 
 ```text
 app/
-  components/              # Seções e interações da página
-  config/product.ts        # Dados do produto, especificações, tamanhos, mídia e FAQ
-  config/site.ts           # Configuração pública da marca e URL canônica
-  lib/checkout.ts          # Validação segura do checkout externo
-  lib/tracking.ts          # Consentimento e eventos de marketing
-  privacidade/             # Página provisória de política de privacidade
-  termos/                  # Página provisória de termos de compra
-  trocas-e-devolucoes/     # Página provisória de trocas/devoluções
-  sitemap.ts e robots.ts   # SEO técnico
-public/
-  images/brand/            # Espaço para ativos da marca
-  images/products/         # Fotos e imagens WebP otimizadas
-  manus-routes.json        # Manifesto de rotas públicas
+  components/              # Landing, urgência, avaliações, galeria, consentimento
+  checkout/                # Checkout próprio (página + formulário)
+  pedido/[numero]/         # Página do pedido: QR PIX, status em tempo real
+  api/checkout/            # Cria o pedido + PIX
+  api/orders/status/       # Consulta/renova o PIX (lê status real do gateway)
+  api/webhooks/bravopay/   # Webhook assinado da BravoPay (idempotente)
+  config/product.ts        # Produto, mídia, specs, FAQ
+  config/commerce.ts       # Preço (pendência), frete, urgência, avaliações
+  lib/payments/            # Integração BravoPay (contrato reaproveitado do CLEARFINGER)
+  lib/meta/capi.ts         # Meta Conversions API (servidor)
+  lib/validation.ts        # Schemas Zod do checkout
+  server/orders.ts         # Núcleo: criar pedido, gerar/renovar PIX, aplicar status, Purchase
+  server/webhooks.ts       # Processamento idempotente do webhook
+prisma/schema.prisma       # Customer, Order, Payment, PaymentEvent, WebhookEvent
 ```
-
-## Cadastro atual do produto
-
-`app/config/product.ts` é a fonte central editável.
-
-- **Tamanhos exibidos:** PP, P, M, G, GG, XG, XXG e XXXG.
-- **Composição:** 90% algodão e 10% poliéster.
-- **Impressão:** sublimação.
-- **Cuidados informados:** não lavar na máquina nem a seco; não usar cloro, cândida ou outros alvejantes.
-- **Ainda pendentes:** preço e estoque por tamanho, tabela de medidas, frete, prazo, atendimento, políticas comerciais e dados legais.
-
-A tabela de medidas só aparece após receber as medidas reais do fabricante. A escolha de tamanho é exibida antes do checkout, mas não é transmitida automaticamente ao serviço externo.
-
-## Imagens do produto
-
-As sete imagens da primeira remessa `camisetapt.zip` e cinco novas artes de `PT.zip` foram convertidas para WebP, preservando proporção e mantendo os originais fora do diretório público. As novas artes de embalagem, modelos e cenas de campanha são marcadas como **ilustrativas**; não comprovam embalagem incluída, evento real, estoque ou uma condição comercial.
-
-A galeria é configurada no array `media` de `app/config/product.ts`. Consulte [`public/images/products/README.md`](public/images/products/README.md) antes de substituir arquivos.
-
-## Checkout externo
-
-A função `getCheckoutUrl()` em `app/lib/checkout.ts` só aceita uma URL configurada com HTTPS, sem credenciais embutidas, e um hostname exato explicitamente listado. As variáveis são:
-
-```dotenv
-NEXT_PUBLIC_EXTERNAL_CHECKOUT_URL=
-NEXT_PUBLIC_EXTERNAL_CHECKOUT_ALLOWED_HOSTS=
-```
-
-Se a URL, o HTTPS ou a allowlist forem inválidos/ausentes, a página informa que nenhum redirecionamento será feito. Nenhum dado pessoal é anexado à URL. A página não coleta pagamentos nem envia evento `Purchase` sem uma confirmação confiável do provedor.
-
-O endereço recebido foi `https://pagseguropix.org/c/camiseta-somos-todos-pt`. Ele não foi configurado: a documentação oficial do [Checkout e Link de Pagamento PagBank](https://developer.pagbank.com.br/docs/checkout) exemplifica a URL de pagamento no domínio `pagamento.pagbank.com.br`, enquanto o link enviado usa outro domínio e sua página pede e-mail, nome, telefone e CPF, além de mostrar preço e condições que ainda não foram confirmados pela loja. Isso não comprova fraude nem comprova autorização. Antes de permitir redirecionamento de clientes, o responsável deve confirmar que controla e autoriza o destino e conferir as condições apresentadas. O preço permanece oculto na landing page até confirmação.
-
-Quando o destino autorizado estiver confirmado, configure a URL integral e o host exato correspondente na allowlist. Não inclua segredos em variáveis `NEXT_PUBLIC_*`.
-
-## Variáveis de ambiente
-
-Copie `.env.example` para `.env.local` apenas no ambiente local. Nunca faça commit de `.env.local`.
-
-| Variável | Propósito | Obrigatória agora? |
-| --- | --- | --- |
-| `NEXT_PUBLIC_EXTERNAL_CHECKOUT_URL` | URL pública do checkout externo confirmado | Não — necessária para ativar o redirecionamento |
-| `NEXT_PUBLIC_EXTERNAL_CHECKOUT_ALLOWED_HOSTS` | Hosts HTTPS autorizados, separados por vírgula | Não — necessária junto com a URL |
-| `NEXT_PUBLIC_SITE_URL` | URL HTTPS do site para canonical, OG e sitemap | Já configurada na produção |
-| `NEXT_PUBLIC_META_PIXEL_ID` | ID público do Meta Pixel | Não |
-| `NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_ID` | ID público do Google Ads | Não |
-| `NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL` | Rótulo público de conversão do Google Ads | Não |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ID público do Google Analytics | Não |
-
-Nenhuma variável pública deve conter token, senha, chave privada ou segredo de pagamento.
-
-## Marketing, consentimento e LGPD
-
-- O banner de cookies começa sem opção pré-marcada.
-- Ao recusar, nenhuma tag de marketing é inicializada.
-- Ao aceitar, a aplicação pode carregar Meta Pixel e Google tag somente se os IDs estiverem configurados.
-- Eventos previstos: `PageView`, `ViewContent`, `SelectSize`, `CTAClick` e `InitiateCheckout`, com deduplicação.
-- `Purchase` não é implementado: um clique não confirma uma compra.
-- Não há envio de dados pessoais às plataformas de anúncio nem parâmetros pessoais em URLs.
-
-## SEO e deploy
-
-A página publica metadata, Open Graph, Twitter Card, favicon, `robots.ts`, `sitemap.ts`, foco visível, navegação por teclado, textos alternativos e preferência por movimento reduzido. Canonical e sitemap usam a URL real de produção `https://somostodospt-produtos.vercel.app`.
-
-O projeto Vercel `somostodospt-produtos` está conectado ao GitHub `dimasricsilva7/somostodospt` na branch principal. O deploy automático publica mudanças aceitas em `main`.
-
-## Pendências comerciais
-
-- Confirmar preço e disponibilidade/estoque de cada tamanho.
-- Fornecer tabela de medidas real.
-- Confirmar URL e domínio autorizados do checkout, revisar preço e demais condições mostradas nele e confirmar como selecionar o tamanho.
-- Fornecer frete, prazo, política de troca/devolução, atendimento e dados legais.
-- Configurar, se desejado, IDs reais de Meta, Google Ads e Google Analytics.
-- Confirmar os direitos de uso comercial das imagens, do nome, da marca e de quaisquer retratos.
 
 ## Segurança
 
-- Sem painel administrativo, banco ou formulário de pagamento próprio.
-- HTTPS, hostname exato permitido e ausência de credenciais na URL do checkout.
-- Sem URL de checkout fictícia, carrinho falso, falsa confirmação de pedido ou compra simulada.
-- Sem contadores falsos, avaliações fictícias, selos de segurança falsos ou promessas não verificadas.
+- Chave da BravoPay e tokens do CAPI **somente no servidor** (nunca em `NEXT_PUBLIC_*`).
+- Webhook valida assinatura HMAC-SHA256 (`t=…,v1=…`) com anti-replay; sem assinatura válida → 401.
+- Idempotência: `checkoutToken` (pedido), `Idempotency-Key` (cobrança), `eventId` único (webhook).
+- Status de pagamento sempre do backend/gateway; o "Já paguei" do cliente nunca confirma nada.
+- Total recalculado no servidor; honeypot, bloqueio de user-agent de script, limites por IP/e-mail.
+- Pedido acessível só com `accessToken` secreto no link.
+
+## Variáveis de ambiente
+
+Veja `.env.example`. Nenhum segredo em `NEXT_PUBLIC_*`.
+
+| Variável | Obrigatória | Para quê |
+| --- | --- | --- |
+| `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | Sim | Postgres (Neon): pooled / direto (migrations) |
+| `NEXT_PUBLIC_SITE_URL` | Sim | URL pública (canonical, OG, links do pedido, CAPI) |
+| `AUTH_SECRET` | Sim | Hash de IP (LGPD) |
+| `BRAVOPAY_API_KEY` | Sim (prod) | Criar cobranças PIX reais |
+| `BRAVOPAY_WEBHOOK_SECRET` | Sim (prod) | Validar o webhook |
+| `BRAVOPAY_MODE=mock` | Não | PIX fictício para testar o fluxo (bloqueado em produção) |
+| `BRAVOPAY_PRODUCT_ID` | Não | Atribuição no painel BravoPay |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Não | Meta Pixel (navegador) |
+| `META_CAPI_TOKENS` ou `META_ACCESS_TOKEN` | Não | Meta Conversions API (servidor) |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_GOOGLE_ADS_*` | Não | Google (opcional) |
+
+## Pendências para vender de verdade
+
+Veja **[docs/PENDENCIAS.md](docs/PENDENCIAS.md)**. Em resumo: publicar o **preço real** em
+`app/config/product.ts`, configurar `DATABASE_URL`, `BRAVOPAY_API_KEY` e `BRAVOPAY_WEBHOOK_SECRET`
+na Vercel, cadastrar o webhook no painel BravoPay e preencher frete/prazo/políticas reais.

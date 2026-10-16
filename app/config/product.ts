@@ -30,6 +30,7 @@ export const product = {
   brand: "Somos Todos PT",
   name: "Camiseta Somos Todos PT",
   shortName: "Camiseta vermelha — edição visual Lula",
+  sku: "STPT-CAMISETA-VERMELHA",
   currency: "BRL",
   // Preencha apenas com valores comerciais reais, em centavos. Ex.: 7990 para R$ 79,90.
   priceInCents: undefined as number | undefined,

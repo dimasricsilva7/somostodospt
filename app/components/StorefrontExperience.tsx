@@ -1,44 +1,33 @@
 "use client";
 
-import {
-  ArrowRight,
-  Check,
-  ExternalLink,
-  Info,
-  ShieldCheck,
-  ShoppingBag,
-  X,
-} from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowRight, Info, ShieldCheck, ShoppingBag, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { product, formatPrice } from "@/app/config/product";
-import { getCheckoutUrl } from "@/app/lib/checkout";
-import { track } from "@/app/lib/tracking";
+import { priceReady } from "@/app/config/commerce";
+import { newEventId, track } from "@/app/lib/tracking";
 import { BrandMark } from "./BrandMark";
 import { CookieConsent } from "./CookieConsent";
 import { Faq } from "./Faq";
 import { ProductGallery } from "./ProductGallery";
 import { ProductMedia } from "./ProductMedia";
+import { Reviews } from "./Reviews";
 import { SizeSelector } from "./SizeSelector";
+import { UrgencyBar } from "./UrgencyBar";
 
 function scrollToSizeSelector() {
   document.getElementById("tamanho")?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 export function StorefrontExperience() {
+  const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const [showSizeGuide, setShowSizeGuide] = useState(false);
-  const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const currentPrice = formatPrice(product.priceInCents);
   const originalPrice = formatPrice(product.compareAtPriceInCents);
-  const checkout = useMemo(() => getCheckoutUrl(), []);
-  const isCommerceReady = Boolean(
-    currentPrice &&
-      product.availableSizes.length > 0 &&
-      checkout.status === "ready",
-  );
+  const isCommerceReady = priceReady() && product.availableSizes.length > 0;
 
   function selectSize(size: string) {
     setSelectedSize(size);
@@ -49,44 +38,27 @@ export function StorefrontExperience() {
   function beginCheckout(source: string) {
     track("CTAClick", { source });
 
-    if (product.requiresSize && product.availableSizes.length === 0) {
-      setNotice("Os tamanhos ainda não foram confirmados para venda. Nenhum checkout foi iniciado.");
-      scrollToSizeSelector();
+    if (!isCommerceReady) {
+      setNotice("A compra será ativada assim que o preço for publicado pelo responsável pela loja.");
       return;
     }
-
     if (product.requiresSize && !selectedSize) {
-      setNotice("Escolha um tamanho antes de seguir para o checkout.");
+      setNotice("Escolha um tamanho antes de continuar.");
       scrollToSizeSelector();
-      return;
-    }
-
-    const validatedCheckout = getCheckoutUrl();
-    if (validatedCheckout.status !== "ready") {
-      setNotice(validatedCheckout.message);
       return;
     }
 
     setNotice(undefined);
-    setShowCheckoutConfirm(true);
-  }
-
-  function confirmCheckout() {
-    const validatedCheckout = getCheckoutUrl();
-    if (validatedCheckout.status !== "ready" || isRedirecting) {
-      if (validatedCheckout.status !== "ready") setNotice(validatedCheckout.message);
-      setShowCheckoutConfirm(false);
-      return;
-    }
-
-    setIsRedirecting(true);
-    track("InitiateCheckout", { selected_size: selectedSize ?? "not_required" });
-    window.location.assign(validatedCheckout.url);
+    track("InitiateCheckout", { content_name: product.name, size: selectedSize ?? "unica", currency: product.currency }, { eventId: newEventId() });
+    const params = new URLSearchParams();
+    if (selectedSize) params.set("tam", selectedSize);
+    router.push(`/checkout?${params.toString()}`);
   }
 
   return (
     <>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <UrgencyBar />
       <header className="site-header">
         <div className="container site-header__inner">
           <a href="#produto" aria-label="Somos Todos PT — ir para o produto"><BrandMark compact /></a>
@@ -111,7 +83,7 @@ export function StorefrontExperience() {
               <p className="hero-section__lead">
                 Uma camiseta vermelha com estampa marcante em homenagem a Lula, criada para quem quer expressar sua identidade por meio do que veste.
               </p>
-              <p className="hero-section__statement">Uma peça que transforma uma camiseta em uma declaração de identidade.</p>
+              <p className="hero-section__statement">Pagamento por PIX, com confirmação automática e entrega para todo o Brasil.</p>
               <div className="hero-section__price" aria-live="polite">
                 {currentPrice ? (
                   <>
@@ -125,7 +97,7 @@ export function StorefrontExperience() {
               <button type="button" className="button button--light button--large" onClick={() => beginCheckout("hero")}>
                 QUERO A MINHA CAMISETA <ArrowRight size={19} aria-hidden="true" />
               </button>
-              <p className="hero-section__fineprint">Escolha seu tamanho e confira os dados e as condições no checkout externo antes de concluir o pedido.</p>
+              <p className="hero-section__fineprint">Escolha o tamanho, confirme seus dados e pague com PIX em um checkout seguro aqui no site.</p>
             </div>
             <div className="hero-section__visual">
               <span className="hero-section__star" aria-hidden="true">✦</span>
@@ -135,16 +107,14 @@ export function StorefrontExperience() {
           </div>
         </section>
 
-        <section className="readiness-strip" aria-label="Status da configuração comercial">
-          <div className="container readiness-strip__inner">
-            <Info size={19} aria-hidden="true" />
-            <p>
-              {isCommerceReady
-                ? "Cadastro comercial configurado. Confira as condições no checkout externo."
-                : "Preço, disponibilidade, medidas, frete e condições do checkout ainda estão em confirmação."}
-            </p>
-          </div>
-        </section>
+        {!isCommerceReady && (
+          <section className="readiness-strip" aria-label="Status da configuração comercial">
+            <div className="container readiness-strip__inner">
+              <Info size={19} aria-hidden="true" />
+              <p>Preço e disponibilidade estão em confirmação pelo responsável pela loja. A compra será ativada em seguida.</p>
+            </div>
+          </section>
+        )}
 
         <ProductGallery media={product.media} />
 
@@ -196,7 +166,7 @@ export function StorefrontExperience() {
           </div>
         </section>
 
-        <section className="selection-section">
+        <section id="tamanho" className="selection-section">
           <div className="container selection-section__layout">
             <SizeSelector
               sizes={product.availableSizes}
@@ -208,8 +178,8 @@ export function StorefrontExperience() {
             <aside className="selection-section__note">
               <ShieldCheck size={23} aria-hidden="true" />
               <div>
-                <strong>Confirmação no checkout</strong>
-                <p>A escolha feita aqui aparece no resumo antes do redirecionamento. Confirme o mesmo tamanho no checkout; esta seleção não é transmitida automaticamente.</p>
+                <strong>O tamanho vai com o seu pedido</strong>
+                <p>O tamanho escolhido aqui acompanha o pedido do início ao fim. Você ainda pode confirmá-lo ou trocá-lo no checkout antes de pagar.</p>
               </div>
             </aside>
           </div>
@@ -224,12 +194,12 @@ export function StorefrontExperience() {
               <p className="offer-card__price">{currentPrice ?? "Preço em atualização"}</p>
               <dl className="offer-card__summary">
                 <div><dt>Tamanho</dt><dd>{selectedSize ?? "Escolha acima"}</dd></div>
-                <div><dt>Frete e entrega</dt><dd>Aguardando configuração</dd></div>
+                <div><dt>Pagamento</dt><dd>PIX</dd></div>
               </dl>
               <button type="button" className="button button--large" onClick={() => beginCheckout("oferta")}>
                 COMPRAR AGORA <ArrowRight size={19} aria-hidden="true" />
               </button>
-              <p className="offer-card__notice">Nenhum pagamento é processado nesta página.</p>
+              <p className="offer-card__notice">Checkout seguro no próprio site. Pagamento por PIX.</p>
             </div>
           </div>
         </section>
@@ -241,12 +211,14 @@ export function StorefrontExperience() {
               <h2 id="processo-titulo">O que acontece a seguir.</h2>
             </div>
             <div className="process-list">
-              <article><span>01</span><h3>Escolha informada</h3><p>O tamanho selecionado aparece no seu resumo antes do checkout.</p></article>
-              <article><span>02</span><h3>Checkout externo</h3><p>Confira o endereço, o tamanho e as condições antes de informar seus dados e concluir o pedido.</p></article>
-              <article><span>03</span><h3>Condições reais</h3><p>Pagamento, frete, prazo e políticas serão mostrados somente quando disponíveis.</p></article>
+              <article><span>01</span><h3>Escolha o tamanho</h3><p>O tamanho selecionado acompanha o seu pedido até o pagamento.</p></article>
+              <article><span>02</span><h3>Pague com PIX</h3><p>Geramos o QR Code e o código copia e cola na hora, com valor exato.</p></article>
+              <article><span>03</span><h3>Confirmação automática</h3><p>Assim que o pagamento é confirmado, seu pedido é atualizado automaticamente.</p></article>
             </div>
           </div>
         </section>
+
+        <Reviews />
 
         <Faq items={product.faq} />
 
@@ -267,12 +239,24 @@ export function StorefrontExperience() {
 
       <footer className="site-footer">
         <div className="container site-footer__grid">
-          <div><BrandMark inverse /><p>Uma página de produto preparada para receber somente informações comerciais confirmadas.</p></div>
+          <div><BrandMark inverse /><p>Camiseta Somos Todos PT com checkout próprio e pagamento por PIX.</p></div>
           <div><h2>Institucional</h2><a href="/privacidade">Política de privacidade</a><a href="/termos">Termos de compra</a><a href="/trocas-e-devolucoes">Trocas e devoluções</a></div>
           <div><h2>Atendimento</h2><p>Canal de atendimento aguardando configuração pelo responsável.</p><button type="button" className="text-link text-link--light" onClick={() => window.dispatchEvent(new Event("stpt-open-preferences"))}>Preferências de cookies</button></div>
         </div>
         <div className="container site-footer__bottom"><span>© {new Date().getFullYear()} Somos Todos PT.</span><span>Informações legais e comerciais pendentes de cadastro.</span></div>
       </footer>
+
+      {isCommerceReady && (
+        <div className="sticky-cta">
+          <div className="sticky-cta__info">
+            <strong>{currentPrice}</strong>
+            <span>{selectedSize ? `Tamanho ${selectedSize}` : "Escolha o tamanho"}</span>
+          </div>
+          <button type="button" className="button" onClick={() => beginCheckout("barra_fixa")}>
+            COMPRAR <ArrowRight size={17} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {notice && (
         <div className="notice-toast" role="status">
@@ -290,19 +274,6 @@ export function StorefrontExperience() {
             ) : (
               <table><thead><tr><th>Tamanho</th><th>Largura</th><th>Comprimento</th></tr></thead><tbody>{product.sizeGuide.map((row) => <tr key={row.size}><td>{row.size}</td><td>{row.widthCm} cm</td><td>{row.lengthCm} cm</td></tr>)}</tbody></table>
             )}
-          </div>
-        </div>
-      )}
-
-      {showCheckoutConfirm && checkout.status === "ready" && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="checkout-confirm-title">
-          <div className="modal-card modal-card--checkout">
-            <button type="button" className="modal-card__close" aria-label="Cancelar ida ao checkout" onClick={() => setShowCheckoutConfirm(false)}><X size={19} /></button>
-            <ExternalLink size={26} aria-hidden="true" /><p className="eyebrow">CHECKOUT EXTERNO</p><h2 id="checkout-confirm-title">Confirme antes de seguir.</h2>
-            <p>Você será direcionado ao checkout externo autorizado. Nenhum dado pessoal será incluído na URL.</p>
-            {product.requiresSize && <p className="checkout-size"><Check size={18} aria-hidden="true" /> Tamanho selecionado: <strong>{selectedSize}</strong></p>}
-            <p className="form-note">Confirme o mesmo tamanho no checkout se essa opção estiver disponível. Esta seleção não é transferida automaticamente sem suporte oficial de variantes.</p>
-            <button type="button" className="button button--large" disabled={isRedirecting} onClick={confirmCheckout}>{isRedirecting ? "REDIRECIONANDO…" : "IR AO CHECKOUT"}<ArrowRight size={19} aria-hidden="true" /></button>
           </div>
         </div>
       )}

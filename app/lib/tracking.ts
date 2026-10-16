@@ -4,19 +4,25 @@ export type TrackingEvent =
   | "ViewContent"
   | "SelectSize"
   | "CTAClick"
-  | "InitiateCheckout";
+  | "InitiateCheckout"
+  | "AddPaymentInfo"
+  | "Purchase";
 
 type TrackingPayload = Record<string, string | number | boolean | undefined>;
 
 type TrackingWindow = Window &
   typeof globalThis & {
     dataLayer?: unknown[];
-    fbq?: ((...args: unknown[]) => void) & { queue?: unknown[][] };
+    fbq?: ((...args: unknown[]) => void) & { queue?: unknown[][]; loaded?: boolean; version?: string; callMethod?: (...a: unknown[]) => void };
+    _fbq?: unknown;
     gtag?: (...args: unknown[]) => void;
   };
 
 const CONSENT_KEY = "stpt-cookie-consent";
 const DEDUPE_PREFIX = "stpt-event:";
+const VISITOR_KEY = "stpt-vid";
+const SESSION_KEY = "stpt-sid";
+const ATTR_FIRST_KEY = "stpt-attr-first";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined";
@@ -38,6 +44,93 @@ export function setConsentChoice(choice: Exclude<ConsentChoice, "undecided">): v
   window.dispatchEvent(new Event("stpt-consent-change"));
 }
 
+export function newEventId(): string {
+  if (isBrowser() && window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function persistentId(key: string): string {
+  if (!isBrowser()) return "";
+  try {
+    let id = window.localStorage.getItem(key);
+    if (!id) {
+      id = newEventId();
+      window.localStorage.setItem(key, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
+function sessionId(): string {
+  if (!isBrowser()) return "";
+  try {
+    let id = window.sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = newEventId();
+      window.sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
+function readCookie(name: string): string | undefined {
+  if (!isBrowser()) return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+type Touch = { source?: string; medium?: string; campaign?: string; content?: string; term?: string; id?: string; at?: number };
+
+function currentTouch(): Touch {
+  if (!isBrowser()) return {};
+  const p = new URLSearchParams(window.location.search);
+  const t: Touch = {
+    source: p.get("utm_source") || undefined,
+    medium: p.get("utm_medium") || undefined,
+    campaign: p.get("utm_campaign") || undefined,
+    content: p.get("utm_content") || undefined,
+    term: p.get("utm_term") || undefined,
+    id: p.get("utm_id") || undefined,
+    at: Date.now(),
+  };
+  return t;
+}
+
+/** Contexto enviado ao servidor no checkout (atribuição + ids da Meta). */
+export function buildClientContext(adsConsent: boolean) {
+  if (!isBrowser()) return undefined;
+  const p = new URLSearchParams(window.location.search);
+  const last = currentTouch();
+  let first: Touch = last;
+  try {
+    const saved = window.localStorage.getItem(ATTR_FIRST_KEY);
+    if (saved) first = JSON.parse(saved) as Touch;
+    else if (last.source || last.campaign) window.localStorage.setItem(ATTR_FIRST_KEY, JSON.stringify(last));
+  } catch {
+    /* ignore */
+  }
+  return {
+    sessionId: sessionId(),
+    visitorId: persistentId(VISITOR_KEY),
+    fbp: readCookie("_fbp"),
+    fbc: readCookie("_fbc"),
+    adsConsent,
+    attribution: {
+      first,
+      last,
+      fbclid: p.get("fbclid") || undefined,
+      gclid: p.get("gclid") || undefined,
+      ttclid: p.get("ttclid") || undefined,
+      landingPage: window.location.pathname + window.location.search,
+      referrer: document.referrer || undefined,
+    },
+  };
+}
+
 function injectScript(id: string, src: string): void {
   if (!isBrowser() || document.getElementById(id)) return;
   const script = document.createElement("script");
@@ -55,13 +148,19 @@ export function initializeTrackingProviders(): void {
 
   const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
   if (metaPixelId && !win.fbq) {
-    const fbq: NonNullable<TrackingWindow["fbq"]> = (...args: unknown[]) => {
-      fbq.queue?.push(args);
+    // Snippet oficial do Meta Pixel (fila até o fbevents.js carregar).
+    const fbq: NonNullable<TrackingWindow["fbq"]> = function (...args: unknown[]) {
+      if (fbq.callMethod) fbq.callMethod(...args);
+      else fbq.queue?.push(args);
     };
+    if (!win._fbq) win._fbq = fbq;
     fbq.queue = [];
+    fbq.loaded = true;
+    fbq.version = "2.0";
     win.fbq = fbq;
-    fbq("init", metaPixelId);
     injectScript("stpt-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
+    win.fbq("init", metaPixelId);
+    // O PageView é disparado por quem chama track("PageView"), para evitar duplicação.
   }
 
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
@@ -76,41 +175,44 @@ export function initializeTrackingProviders(): void {
     win.gtag("js", new Date());
     if (gaMeasurementId) win.gtag("config", gaMeasurementId);
     if (googleAdsId) win.gtag("config", googleAdsId);
-    injectScript(
-      "stpt-google-tag",
-      `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleId)}`,
-    );
+    injectScript("stpt-google-tag", `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleId)}`);
   }
 }
 
-function alreadyTracked(event: TrackingEvent, payload: TrackingPayload): boolean {
+function alreadyTracked(key: string): boolean {
   if (!isBrowser()) return false;
-  const fingerprint = `${DEDUPE_PREFIX}${event}:${window.location.pathname}:${JSON.stringify(payload)}`;
-  if (window.sessionStorage.getItem(fingerprint)) return true;
-  window.sessionStorage.setItem(fingerprint, "1");
+  const fingerprint = `${DEDUPE_PREFIX}${key}`;
+  try {
+    if (window.sessionStorage.getItem(fingerprint)) return true;
+    window.sessionStorage.setItem(fingerprint, "1");
+  } catch {
+    return false;
+  }
   return false;
 }
 
-export function track(event: TrackingEvent, payload: TrackingPayload = {}): boolean {
+/**
+ * Dispara um evento. `eventId` deduplica com o CAPI (servidor). `once` evita repetição
+ * por sessão. Purchase NUNCA é disparado por clique — só na página do pedido pago,
+ * com o event_id do servidor.
+ */
+export function track(event: TrackingEvent, payload: TrackingPayload = {}, opts: { eventId?: string; once?: boolean } = {}): boolean {
   if (!isBrowser() || getConsentChoice() !== "accepted") return false;
-  if (alreadyTracked(event, payload)) return false;
+  if (opts.once && alreadyTracked(`${event}:${opts.eventId ?? window.location.pathname}`)) return false;
 
   initializeTrackingProviders();
   const win = trackingWindow();
   if (!win) return false;
 
-  const cleanPayload = Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => value !== undefined),
-  );
+  const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
 
   win.dataLayer = win.dataLayer ?? [];
   win.dataLayer.push({ event, ...cleanPayload });
-  window.dispatchEvent(new CustomEvent("stpt:track", { detail: { event, ...cleanPayload } }));
 
-  if (event === "PageView") {
-    win.fbq?.("track", "PageView");
-  } else if (event === "ViewContent" || event === "InitiateCheckout") {
-    win.fbq?.("track", event, cleanPayload);
+  const fbOptions = opts.eventId ? { eventID: opts.eventId } : undefined;
+  const standard: TrackingEvent[] = ["PageView", "ViewContent", "InitiateCheckout", "AddPaymentInfo", "Purchase"];
+  if (standard.includes(event)) {
+    win.fbq?.("track", event, cleanPayload, fbOptions);
   } else {
     win.fbq?.("trackCustom", event, cleanPayload);
   }

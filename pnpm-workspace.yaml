@@ -1,6 +1,9 @@
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+  '@prisma/client': true
+  prisma: true
+  '@prisma/engines': true
 minimumReleaseAgeExclude:
   - '@next/env@16.4.1'
   - '@next/eslint-plugin-next@16.4.1'
