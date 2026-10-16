@@ -1,5 +1,8 @@
 import "server-only";
 import { db } from "@/app/lib/db";
+import type { AbandonedLead } from "@/app/types/admin";
+
+export type { AbandonedLead };
 
 export type LeadInput = {
   clientKey: string;
@@ -35,16 +38,6 @@ export async function linkLeadToOrder(clientKey: string | null | undefined, orde
   if (!clientKey) return;
   await db.checkoutLead.update({ where: { clientKey: clientKey.slice(0, 64) }, data: { orderId } }).catch(() => {});
 }
-
-export type AbandonedLead = {
-  email: string | null;
-  phone: string | null;
-  name: string | null;
-  productName: string | null;
-  size: string | null;
-  totalCents: number;
-  updatedAt: string;
-};
 
 /** Leads sem pedido, parados há mais de `minMinutes` (abandonados). */
 export async function listAbandoned(minMinutes = 15, limit = 80): Promise<{ rows: AbandonedLead[]; ok: boolean }> {

@@ -1,5 +1,8 @@
 import "server-only";
 import { db } from "@/app/lib/db";
+import type { OnlineRow } from "@/app/types/admin";
+
+export type { OnlineRow };
 
 const cut = (v: string | null | undefined, n = 200) => (v ? String(v).slice(0, n) : null);
 
@@ -14,8 +17,6 @@ export async function touchSession(id: string, visitorId: string, path: string |
     })
     .catch(() => {});
 }
-
-export type OnlineRow = { path: string | null; device: string | null; lastSeenAt: string };
 
 /** Visitantes ativos nos últimos `minutes` minutos. */
 export async function onlineNow(minutes = 5, limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {

@@ -1,19 +1,9 @@
 import "server-only";
 import type { FulfillmentStatus } from "@prisma/client";
 import { db } from "@/app/lib/db";
+import type { AdminOrderRow } from "@/app/types/admin";
 
-export type AdminOrderRow = {
-  orderNumber: string;
-  createdAt: string;
-  status: string;
-  fulfillmentStatus: string;
-  customerName: string;
-  productName: string;
-  size: string;
-  quantity: number;
-  totalCents: number;
-  paidAt: string | null;
-};
+export type { AdminOrderRow };
 
 export async function listOrders(limit = 80): Promise<{ rows: AdminOrderRow[]; ok: boolean }> {
   try {
@@ -26,6 +16,7 @@ export async function listOrders(limit = 80): Promise<{ rows: AdminOrderRow[]; o
         status: true,
         fulfillmentStatus: true,
         customerSnapshot: true,
+        shippingAddress: true,
         productName: true,
         size: true,
         quantity: true,
@@ -33,18 +24,26 @@ export async function listOrders(limit = 80): Promise<{ rows: AdminOrderRow[]; o
         paidAt: true,
       },
     });
-    const rows = orders.map((o) => ({
-      orderNumber: o.orderNumber ?? "—",
-      createdAt: o.createdAt.toISOString(),
-      status: o.status,
-      fulfillmentStatus: o.fulfillmentStatus,
-      customerName: (o.customerSnapshot as { name?: string })?.name ?? "—",
-      productName: o.productName,
-      size: o.size,
-      quantity: o.quantity,
-      totalCents: o.totalCents,
-      paidAt: o.paidAt?.toISOString() ?? null,
-    }));
+    const rows = orders.map((o) => {
+      const snap = (o.customerSnapshot ?? {}) as { name?: string; email?: string; phone?: string };
+      const addr = (o.shippingAddress ?? {}) as { city?: string; state?: string };
+      return {
+        orderNumber: o.orderNumber ?? "—",
+        createdAt: o.createdAt.toISOString(),
+        status: o.status,
+        fulfillmentStatus: o.fulfillmentStatus,
+        customerName: snap.name ?? "—",
+        customerEmail: snap.email ?? "",
+        customerPhone: snap.phone ?? "",
+        city: addr.city ?? "",
+        state: addr.state ?? "",
+        productName: o.productName,
+        size: o.size,
+        quantity: o.quantity,
+        totalCents: o.totalCents,
+        paidAt: o.paidAt?.toISOString() ?? null,
+      };
+    });
     return { rows, ok: true };
   } catch {
     return { rows: [], ok: false };
