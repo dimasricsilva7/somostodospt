@@ -174,6 +174,42 @@ model PaymentEvent {
   @@index([orderId, createdAt])
 }
 
+// ───────────────────────── Conteúdo editável no admin ─────────────────────────
+
+/// Imagens enviadas pelo admin (bytes no Postgres, servidas por /media/[id]). Padrão MONTEZ/CLEARFINGER.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  filename  String
+  mimeType  String
+  data      Bytes
+  size      Int?
+  createdAt DateTime @default(now())
+}
+
+/// Sobrescreve os dados do catálogo (app/config/catalog.ts) por modelo. Vazio = usa o padrão do código.
+model ProductContent {
+  slug                String   @id
+  name                String?
+  description         String?
+  priceCents          Int?
+  compareAtPriceCents Int?
+  /// Lista de tamanhos disponíveis, ex.: ["PP","P","M"]
+  sizes               Json?
+  active              Boolean?
+  /// IDs de MediaAsset: imagem principal + galeria
+  mainImageId         String?
+  galleryIds          Json?
+  sortOrder           Int?
+  updatedAt           DateTime @updatedAt
+}
+
+/// Textos editáveis da loja (hero, títulos, etc.) — chave → valor JSON.
+model SiteContent {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
 enum WebhookStatus {
   RECEIVED
   PROCESSED

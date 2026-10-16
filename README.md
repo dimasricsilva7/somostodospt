@@ -50,8 +50,13 @@ app/
   api/checkout/            # Cria o pedido + PIX
   api/orders/status/       # Consulta/renova o PIX (lê status real do gateway)
   api/webhooks/bravopay/   # Webhook assinado da BravoPay (idempotente)
-  config/product.ts        # Produto, mídia, specs, FAQ
-  config/commerce.ts       # Preço (pendência), frete, urgência, avaliações
+  admin/                   # Painel: login, lista de modelos, editor de produto, textos
+  api/admin/               # Login/logout, salvar produto, upload de imagem, salvar textos
+  media/[id]/              # Serve imagens enviadas no admin (bytes no banco)
+  config/catalog.ts        # Catálogo dos 6 modelos (padrões do código)
+  config/product.ts        # Mídia/specs/FAQ compartilhados + preço base
+  config/commerce.ts       # Frete, urgência, avaliações
+  server/content.ts        # Mescla catálogo do código com edições do banco (admin)
   lib/payments/            # Integração BravoPay (contrato reaproveitado do CLEARFINGER)
   lib/meta/capi.ts         # Meta Conversions API (servidor)
   lib/validation.ts        # Schemas Zod do checkout
@@ -77,7 +82,8 @@ Veja `.env.example`. Nenhum segredo em `NEXT_PUBLIC_*`.
 | --- | --- | --- |
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | Sim | Postgres (Neon): pooled / direto (migrations) |
 | `NEXT_PUBLIC_SITE_URL` | Sim | URL pública (canonical, OG, links do pedido, CAPI) |
-| `AUTH_SECRET` | Sim | Hash de IP (LGPD) |
+| `AUTH_SECRET` | Sim | Hash de IP (LGPD) + assinatura da sessão do admin |
+| `ADMIN_PASSWORD_HASH` (ou `ADMIN_PASSWORD`) | Para o /admin | Senha do painel administrativo (`/admin`) |
 | `BRAVOPAY_API_KEY` | Sim (prod) | Criar cobranças PIX reais |
 | `BRAVOPAY_WEBHOOK_SECRET` | Sim (prod) | Validar o webhook |
 | `BRAVOPAY_MODE=mock` | Não | PIX fictício para testar o fluxo (bloqueado em produção) |

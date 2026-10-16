@@ -324,3 +324,52 @@ p { line-height: 1.6; }
   .catalog-card__body { padding: 14px; }
   .catalog-card__price { font-size: 1.25rem; }
 }
+
+/* ───────────────────────── Painel administrativo ───────────────────────── */
+.admin { min-height: 100vh; background: var(--mist); }
+.admin-muted { color: #777; font-size: .85rem; }
+.admin-login { display: grid; place-items: center; min-height: 100vh; padding: 20px; }
+.admin-card { width: min(400px, 100%); padding: 32px; background: #fff; border: 1px solid var(--line); }
+.admin-card h1 { font-size: 1.6rem; margin-bottom: 6px; }
+.admin-form { display: grid; gap: 14px; }
+.admin-field { display: grid; gap: 5px; }
+.admin-field > span { font-size: .8rem; font-weight: 800; }
+.admin-field input, .admin-field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #c7c7c7; border-radius: 3px; font: inherit; font-size: .95rem; }
+.admin-field textarea { min-height: auto; resize: vertical; }
+.admin-field input:focus-visible, .admin-field textarea:focus-visible { outline: 2px solid var(--yellow); border-color: var(--red); }
+.admin-error { margin: 0; color: var(--red-dark); font-size: .85rem; font-weight: 700; }
+.admin-ok { margin: 0; color: var(--green); font-size: .85rem; font-weight: 700; }
+.admin-shell { width: min(820px, calc(100% - 32px)); margin-inline: auto; padding-block: 28px 70px; }
+.admin-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.admin-top h1 { font-size: 1.5rem; margin: 0; }
+.admin-top__actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.admin-link { color: var(--red-dark); font-size: .85rem; font-weight: 800; text-decoration: none; }
+.admin-link:hover { text-decoration: underline; }
+.admin-link--button { padding: 0; border: 0; background: none; cursor: pointer; }
+.admin-warn { margin: 0 0 18px; padding: 12px 14px; border-left: 3px solid var(--yellow); background: #fffbe9; font-size: .84rem; }
+.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
+.admin-stats > div { padding: 16px; background: #fff; border: 1px solid var(--line); text-align: center; }
+.admin-stats strong { display: block; font-family: var(--display); font-size: 1.8rem; }
+.admin-stats span { color: #777; font-size: .76rem; font-weight: 700; }
+.admin-h2 { font-size: 1.1rem; font-family: var(--body); font-weight: 900; margin-bottom: 12px; }
+.admin-products { display: grid; gap: 10px; }
+.admin-product { display: flex; align-items: center; gap: 14px; padding: 12px; background: #fff; border: 1px solid var(--line); text-decoration: none; color: inherit; }
+.admin-product:hover { border-color: var(--red); }
+.admin-product__thumb { width: 56px; height: 56px; flex: 0 0 56px; overflow: hidden; background: var(--mist); display: grid; place-items: center; }
+.admin-product__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.admin-product__noimg { color: #aaa; font-size: .6rem; }
+.admin-product__info { flex: 1; display: grid; gap: 3px; }
+.admin-product__info strong { font-size: .92rem; }
+.admin-product__info span { color: #777; font-size: .78rem; }
+.admin-tag { padding: 4px 9px; border-radius: 3px; font-size: .68rem; font-weight: 900; }
+.admin-tag--on { background: #e9f7ef; color: var(--green); }
+.admin-tag--off { background: #f1f1f1; color: #888; }
+.admin-editor__image { display: grid; justify-items: start; gap: 10px; margin-bottom: 8px; }
+.admin-editor__image img { width: 180px; height: 180px; object-fit: cover; border: 1px solid var(--line); background: #fff; }
+.admin-editor__noimg { display: grid; place-items: center; width: 180px; height: 180px; border: 1px dashed #bbb; color: #999; font-size: .8rem; }
+.admin-editor__image .button { position: relative; cursor: pointer; }
+.admin-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.admin-sizes { display: flex; flex-wrap: wrap; gap: 7px; }
+.admin-check { display: flex; align-items: flex-start; gap: 9px; font-size: .86rem; }
+.admin-check input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--red); }
+@media (max-width: 560px) { .admin-stats { grid-template-columns: 1fr; } .admin-row { grid-template-columns: 1fr; } }

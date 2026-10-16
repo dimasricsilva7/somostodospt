@@ -10,7 +10,8 @@ import { computeTotals, formatOrderNumber, MIN_PIX_CENTS } from "@/app/lib/prici
 import { canTransition, isPaidStatus } from "@/app/lib/order-status";
 import { sendCapiEvent, fbcFromClickId } from "@/app/lib/meta/capi";
 import { product } from "@/app/config/product";
-import { productPriceCents, sellableProduct, sizeAvailable } from "@/app/config/catalog";
+import { productPriceCents, sizeAvailable } from "@/app/config/catalog";
+import { sellableMerged } from "@/app/server/content";
 import { PIX_EXPIRATION_MINUTES, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
@@ -105,7 +106,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
   }
 
   // Modelo escolhido: revalidado no servidor (ativo, com arte e preço). Nunca confiamos no navegador.
-  const model = sellableProduct(input.productSlug);
+  const model = await sellableMerged(input.productSlug);
   if (!model) throw new CheckoutError("Este modelo não está disponível para compra no momento.", 409);
   if (!sizeAvailable(model, input.size)) throw new CheckoutError("Este tamanho não está disponível para o modelo escolhido.", 409, { size: "Tamanho indisponível" });
   const price = productPriceCents(model);

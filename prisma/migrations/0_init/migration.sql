@@ -126,6 +126,44 @@ CREATE TABLE "PaymentEvent" (
 );
 
 -- CreateTable
+CREATE TABLE "MediaAsset" (
+    "id" TEXT NOT NULL,
+    "filename" TEXT NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "data" BYTEA NOT NULL,
+    "size" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MediaAsset_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductContent" (
+    "slug" TEXT NOT NULL,
+    "name" TEXT,
+    "description" TEXT,
+    "priceCents" INTEGER,
+    "compareAtPriceCents" INTEGER,
+    "sizes" JSONB,
+    "active" BOOLEAN,
+    "mainImageId" TEXT,
+    "galleryIds" JSONB,
+    "sortOrder" INTEGER,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductContent_pkey" PRIMARY KEY ("slug")
+);
+
+-- CreateTable
+CREATE TABLE "SiteContent" (
+    "key" TEXT NOT NULL,
+    "value" JSONB NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SiteContent_pkey" PRIMARY KEY ("key")
+);
+
+-- CreateTable
 CREATE TABLE "WebhookEvent" (
     "id" TEXT NOT NULL,
     "provider" TEXT NOT NULL DEFAULT 'bravopay',

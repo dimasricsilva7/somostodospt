@@ -13,7 +13,7 @@ export type ProductMediaId =
   | "multidao-brasilia";
 
 export type ProductMedia = {
-  id: ProductMediaId;
+  id: string;
   label: string;
   alt: string;
   src: string;

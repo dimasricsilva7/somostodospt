@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getProduct, productPriceCents, sellableProduct } from "@/app/config/catalog";
+import { getProduct, productPriceCents } from "@/app/config/catalog";
+import { sellableMerged } from "@/app/server/content";
 import { BrandMark } from "@/app/components/BrandMark";
 import { CheckoutClient } from "./CheckoutClient";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -11,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string; tam?: string }> }) {
   const { produto, tam } = await searchParams;
-  const model = sellableProduct(produto);
+  const model = await sellableMerged(produto);
 
   if (!model) {
     const exists = getProduct(produto);

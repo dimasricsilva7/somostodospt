@@ -2,7 +2,8 @@
 
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { product } from "@/app/config/product";
-import { catalog } from "@/app/config/catalog";
+import type { CatalogProduct } from "@/app/config/catalog";
+import type { SiteTexts } from "@/app/types/content";
 import { BrandMark } from "./BrandMark";
 import { CatalogCard } from "./CatalogCard";
 import { CookieConsent } from "./CookieConsent";
@@ -15,7 +16,7 @@ function scrollToCollection() {
   document.getElementById("colecao")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function StorefrontExperience() {
+export function StorefrontExperience({ products, texts }: { products: CatalogProduct[]; texts: SiteTexts }) {
   return (
     <>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -39,12 +40,10 @@ export function StorefrontExperience() {
           <div className="hero-section__wash" aria-hidden="true" />
           <div className="container hero-section__layout">
             <div className="hero-section__copy">
-              <p className="eyebrow eyebrow--light">COLEÇÃO SOMOS TODOS PT</p>
-              <h1>Vista suas ideias.<br />Escolha o seu modelo.</h1>
-              <p className="hero-section__lead">
-                Camisetas vermelhas com estampas marcantes para quem quer expressar sua identidade por meio do que veste. Escolha o modelo, o tamanho e pague com PIX.
-              </p>
-              <p className="hero-section__statement">Pagamento por PIX com confirmação automática e entrega para todo o Brasil.</p>
+              <p className="eyebrow eyebrow--light">{texts.heroEyebrow}</p>
+              <h1>{texts.heroTitle}</h1>
+              <p className="hero-section__lead">{texts.heroLead}</p>
+              <p className="hero-section__statement">{texts.heroStatement}</p>
               <button type="button" className="button button--light button--large" onClick={scrollToCollection}>
                 VER A COLEÇÃO <ArrowRight size={19} aria-hidden="true" />
               </button>
@@ -62,11 +61,11 @@ export function StorefrontExperience() {
           <div className="container">
             <div className="section-heading section-heading--centered">
               <p className="eyebrow">OS MODELOS</p>
-              <h2>Escolha a sua camiseta.</h2>
-              <p>Cada modelo tem sua estampa. Selecione o tamanho no card e finalize com PIX.</p>
+              <h2>{texts.collectionTitle}</h2>
+              <p>{texts.collectionSubtitle}</p>
             </div>
             <div className="collection-grid">
-              {catalog.map((p) => (
+              {products.map((p) => (
                 <CatalogCard key={p.slug} product={p} />
               ))}
             </div>
