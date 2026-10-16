@@ -5,6 +5,8 @@ import { mergedCatalog } from "@/app/server/content";
 import { productPriceCents } from "@/app/config/catalog";
 import { formatPrice } from "@/app/config/product";
 import { db } from "@/app/lib/db";
+import { onlineCount } from "@/app/server/sessions";
+import { abandonedCount } from "@/app/server/leads";
 import { LogoutButton } from "./LogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,7 @@ async function orderStats() {
 
 export default async function AdminHome() {
   if (!(await isAuthed())) redirect("/admin/login");
-  const [products, stats] = await Promise.all([mergedCatalog(), orderStats()]);
+  const [products, stats, online, abandoned] = await Promise.all([mergedCatalog(), orderStats(), onlineCount(), abandonedCount()]);
 
   return (
     <main className="admin-shell">
@@ -49,6 +51,21 @@ export default async function AdminHome() {
         <div><strong>{stats.paid}</strong><span>Pagos</span></div>
         <div><strong>{stats.pending}</strong><span>Aguardando PIX</span></div>
       </Link>
+
+      <div className="admin-quick">
+        <Link href="/admin/online" className="admin-quick__card">
+          <span className="admin-live"><i /> {online}</span>
+          <span>Online agora</span>
+        </Link>
+        <Link href="/admin/abandonados" className="admin-quick__card">
+          <strong>{abandoned}</strong>
+          <span>Checkouts abandonados</span>
+        </Link>
+        <Link href="/admin/pedidos" className="admin-quick__card">
+          <strong>{stats.pending}</strong>
+          <span>Aguardando pagamento</span>
+        </Link>
+      </div>
 
       <h2 className="admin-h2">Modelos</h2>
       <div className="admin-products">

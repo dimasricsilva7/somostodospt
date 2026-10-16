@@ -63,6 +63,25 @@ export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; i
     });
   }
 
+  function postLead() {
+    if ((!form.email && !form.phone) || !checkoutToken.current) return;
+    fetch("/api/checkout/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        clientKey: checkoutToken.current,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        productSlug: model.slug,
+        productName: model.name,
+        size,
+        totalCents: totals.totalCents,
+      }),
+    }).catch(() => {});
+  }
+
   async function lookupCep(cep: string) {
     const digits = onlyDigits(cep);
     if (digits.length !== 8) return;
@@ -175,10 +194,10 @@ export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; i
             </Field>
             <div className="field-row">
               <Field label="E-mail" error={err("customer.email")}>
-                <input type="email" inputMode="email" autoComplete="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
+                <input type="email" inputMode="email" autoComplete="email" value={form.email} onChange={(e) => update("email", e.target.value)} onBlur={postLead} />
               </Field>
               <Field label="WhatsApp / Celular" error={err("customer.phone")}>
-                <input inputMode="tel" autoComplete="tel" value={form.phone} onChange={(e) => update("phone", maskPhone(e.target.value))} placeholder="(11) 90000-0000" />
+                <input inputMode="tel" autoComplete="tel" value={form.phone} onChange={(e) => update("phone", maskPhone(e.target.value))} onBlur={postLead} placeholder="(11) 90000-0000" />
               </Field>
             </div>
             <Field label="CPF" error={err("customer.cpf")} hint="Necessário para gerar o PIX.">

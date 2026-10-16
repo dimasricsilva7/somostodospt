@@ -100,6 +100,11 @@ function currentTouch(): Touch {
   return t;
 }
 
+/** IDs anônimos de sessão/visitante (heartbeat do "online ao vivo"). */
+export function trackingIds(): { sessionId: string; visitorId: string } {
+  return { sessionId: sessionId(), visitorId: persistentId(VISITOR_KEY) };
+}
+
 /** Contexto enviado ao servidor no checkout (atribuição + ids da Meta). */
 export function buildClientContext(adsConsent: boolean) {
   if (!isBrowser()) return undefined;

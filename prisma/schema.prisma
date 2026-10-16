@@ -210,6 +210,40 @@ model SiteContent {
   updatedAt DateTime @updatedAt
 }
 
+/// Checkout iniciado com contato preenchido — base do "checkout abandonado".
+model CheckoutLead {
+  id          String   @id @default(cuid())
+  /// Chave do checkout (mesma do checkoutToken) — liga o lead ao pedido quando converte
+  clientKey   String   @unique
+  name        String?
+  email       String?
+  phone       String?
+  productSlug String?
+  productName String?
+  size        String?
+  totalCents  Int      @default(0)
+  /// Preenchido quando o lead vira pedido (deixa de ser abandonado)
+  orderId     String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+/// Sessão de visitante (analytics próprio) — base do "online ao vivo".
+model VisitorSession {
+  id          String   @id
+  visitorId   String
+  path        String?
+  device      String?
+  referrer    String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  pageViews   Int      @default(1)
+
+  @@index([lastSeenAt])
+}
+
 enum WebhookStatus {
   RECEIVED
   PROCESSED

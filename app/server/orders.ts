@@ -12,6 +12,7 @@ import { sendCapiEvent, fbcFromClickId } from "@/app/lib/meta/capi";
 import { product } from "@/app/config/product";
 import { productPriceCents, sizeAvailable } from "@/app/config/catalog";
 import { sellableMerged } from "@/app/server/content";
+import { linkLeadToOrder } from "@/app/server/leads";
 import { PIX_EXPIRATION_MINUTES, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
@@ -179,6 +180,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
 
   await logOrderEvent(order.id, "order_created", `Pedido ${order.orderNumber} criado`, { total: order.totalCents, size: order.size, quantity });
   log.info("checkout", "pedido criado", { order: order.orderNumber, total: order.totalCents });
+  await linkLeadToOrder(input.checkoutToken, order.id); // tira o lead da lista de abandonados
 
   const result = await ensurePix(order.id);
 
