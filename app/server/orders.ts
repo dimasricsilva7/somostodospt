@@ -8,7 +8,7 @@ import { hashIp, randomToken, safeEqual } from "@/app/lib/crypto";
 import { paymentService, PaymentError, type PaymentSnapshot, type PaymentStatus } from "@/app/lib/payments";
 import { computeTotals, formatOrderNumber, MIN_PIX_CENTS } from "@/app/lib/pricing";
 import { canTransition, isPaidStatus } from "@/app/lib/order-status";
-import { sendCapiEvent, fbcFromClickId } from "@/app/lib/meta/capi";
+import { sendCapiEvent, fbcFromClickId, capiEnabled } from "@/app/lib/meta/capi";
 import { product } from "@/app/config/product";
 import { productPriceCents, sizeAvailable } from "@/app/config/catalog";
 import { sellableMerged } from "@/app/server/content";
@@ -510,6 +510,64 @@ export async function adminMarkPaid(orderId: string): Promise<{ ok: boolean; not
   };
   const r = await applyPaymentSnapshot(order.id, snap, "admin", "PAID");
   return { ok: r.changed || r.order?.status === "PAID", note: r.note };
+}
+
+/** Reenvia a conversão Purchase ao Meta (CAPI) para um pedido pago — recupera vendas antigas. */
+export async function resendMetaPurchase(orderId: string): Promise<{ sent: boolean; reason?: string }> {
+  if (!capiEnabled()) return { sent: false, reason: "capi_off" };
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+  if (!order) return { sent: false, reason: "not_found" };
+  if (order.status !== "PAID") return { sent: false, reason: "not_paid" };
+
+  const value = order.paidAmountCents ?? order.totalCents;
+  const address = (order.shippingAddress ?? {}) as { city?: string; state?: string; cep?: string };
+  const [firstName, ...rest] = order.customer.name.split(/\s+/);
+  await sendCapiEvent({
+    eventName: "Purchase",
+    eventId: order.metaEventId ?? `purchase_${order.id}`,
+    eventSourceUrl: `${siteUrl()}/pedido/${order.orderNumber}`,
+    eventTime: Math.floor((order.paidAt ?? order.createdAt).getTime() / 1000),
+    user: {
+      email: order.customer.email,
+      phone: order.customer.phone,
+      firstName,
+      lastName: rest.length ? rest[rest.length - 1] : undefined,
+      city: address.city,
+      state: address.state,
+      zip: address.cep,
+      externalId: order.customerId,
+      userAgent: order.userAgent,
+      fbc: order.fbc ?? fbcFromClickId(order.fbclid, order.createdAt),
+      fbp: order.fbp,
+    },
+    customData: {
+      currency: "BRL",
+      value: value / 100,
+      order_id: order.orderNumber,
+      content_type: "product",
+      content_ids: [order.sku],
+      contents: [{ id: order.sku, quantity: order.quantity, item_price: order.unitPriceCents / 100 }],
+      num_items: order.quantity,
+    },
+  });
+  await logOrderEvent(order.id, "meta_purchase_resent", "Conversão Purchase reenviada ao Meta (CAPI, recuperação)");
+  return { sent: true };
+}
+
+/** Reenvia as conversões dos pedidos pagos dos últimos `days` dias (deduplicado por event_id na Meta). */
+export async function resendRecentPurchases(days = 7): Promise<{ sent: number; total: number }> {
+  if (!capiEnabled()) return { sent: 0, total: 0 };
+  const paid = await db.order.findMany({
+    where: { status: "PAID", paidAt: { gte: new Date(Date.now() - days * 86_400_000) } },
+    select: { id: true },
+    take: 200,
+  });
+  let sent = 0;
+  for (const o of paid) {
+    const r = await resendMetaPurchase(o.id);
+    if (r.sent) sent++;
+  }
+  return { sent, total: paid.length };
 }
 
 // ───────────────────────── Acesso público ao pedido ─────────────────────────

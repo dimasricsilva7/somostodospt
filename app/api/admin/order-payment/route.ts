@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAuthed } from "@/app/lib/auth";
 import { isSameOrigin } from "@/app/lib/request";
 import { db } from "@/app/lib/db";
-import { adminMarkPaid, adminVerifyPayment } from "@/app/server/orders";
+import { adminMarkPaid, adminVerifyPayment, resendMetaPurchase } from "@/app/server/orders";
 import { log } from "@/app/lib/log";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +13,20 @@ export async function POST(req: NextRequest) {
   if (!(await isAuthed())) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as { orderNumber?: string; action?: string } | null;
-  if (!body?.orderNumber || !["verify", "mark-paid"].includes(body.action ?? "")) {
+  if (!body?.orderNumber || !["verify", "mark-paid", "resend-meta"].includes(body.action ?? "")) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
   try {
     const order = await db.order.findUnique({ where: { orderNumber: body.orderNumber }, select: { id: true } });
     if (!order) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+
+    if (body.action === "resend-meta") {
+      const r = await resendMetaPurchase(order.id);
+      if (r.sent) return NextResponse.json({ ok: true, message: "Conversão reenviada ao Meta (CAPI)." });
+      const m = r.reason === "capi_off" ? "CAPI não configurado." : r.reason === "not_paid" ? "O pedido não está pago." : "Não foi possível reenviar.";
+      return NextResponse.json({ ok: false, message: m });
+    }
 
     if (body.action === "verify") {
       const r = await adminVerifyPayment(order.id);

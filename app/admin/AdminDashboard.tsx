@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, MessageCircle } from "lucide-react";
+import { Mail, MessageCircle, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ORDER_STATUS_LABEL } from "@/app/lib/order-status";
 import type { OrderStatus } from "@prisma/client";
@@ -39,6 +39,34 @@ function pageName(path: string | null) {
 }
 function dt(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function RecoverMetaButton() {
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string>();
+  async function run() {
+    if (loading) return;
+    if (!confirm("Reenviar ao Meta as conversões (Purchase) dos pedidos pagos dos últimos 7 dias? Seguro: o Meta deduplica por event_id.")) return;
+    setLoading(true);
+    setMsg(undefined);
+    try {
+      const res = await fetch("/api/admin/recover-meta", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      setMsg(data.message ?? data.error ?? "Concluído.");
+    } catch {
+      setMsg("Falha de conexão.");
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="admin-toolbar">
+      <button type="button" className="button button--small button--outline" onClick={run} disabled={loading}>
+        <Send size={14} aria-hidden="true" /> {loading ? "Recuperando…" : "Recuperar conversões no Meta (7 dias)"}
+      </button>
+      {msg && <span className="admin-toolbar__msg">{msg}</span>}
+    </div>
+  );
 }
 
 function OrderRowActions({ orderNumber, phone }: { orderNumber: string; phone: string }) {
@@ -107,6 +135,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
           <button key={p.key} type="button" className={period === p.key ? "is-active" : ""} aria-pressed={period === p.key} onClick={() => setPeriod(p.key)}>{p.label}</button>
         ))}
       </div>
+      <RecoverMetaButton />
       <div className="admin-stats admin-stats--4">
         <div><strong>{money(stats.revenueCents)}</strong><span>Receita (pagos)</span></div>
         <div><strong>{stats.paid}</strong><span>Pedidos pagos</span></div>
