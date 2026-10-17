@@ -111,7 +111,7 @@ export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; i
     if (submitting) return;
     setSubmitting(true);
 
-    const adsConsent = getConsentChoice() === "accepted";
+    const adsConsent = getConsentChoice() !== "rejected";
     const paymentEventId = newEventId();
     track("AddPaymentInfo", { value: totals.totalCents / 100, currency: CURRENCY, content_name: model.name }, { eventId: paymentEventId });
 

@@ -38,6 +38,15 @@ export function getConsentChoice(): ConsentChoice {
   return value === "accepted" || value === "rejected" ? value : "undecided";
 }
 
+/**
+ * Modelo opt-out: rastreia por padrão (inclusive "undecided"), só NÃO rastreia
+ * se a pessoa recusou explicitamente. Necessário para o tráfego pago registrar
+ * conversões no Meta. O banner continua permitindo recusar.
+ */
+export function trackingAllowed(): boolean {
+  return getConsentChoice() !== "rejected";
+}
+
 export function setConsentChoice(choice: Exclude<ConsentChoice, "undecided">): void {
   if (!isBrowser()) return;
   window.localStorage.setItem(CONSENT_KEY, choice);
@@ -146,7 +155,7 @@ function injectScript(id: string, src: string): void {
 }
 
 export function initializeTrackingProviders(): void {
-  if (!isBrowser() || getConsentChoice() !== "accepted") return;
+  if (!isBrowser() || !trackingAllowed()) return;
 
   const win = trackingWindow();
   if (!win) return;
@@ -202,7 +211,7 @@ function alreadyTracked(key: string): boolean {
  * com o event_id do servidor.
  */
 export function track(event: TrackingEvent, payload: TrackingPayload = {}, opts: { eventId?: string; once?: boolean } = {}): boolean {
-  if (!isBrowser() || getConsentChoice() !== "accepted") return false;
+  if (!isBrowser() || !trackingAllowed()) return false;
   if (opts.once && alreadyTracked(`${event}:${opts.eventId ?? window.location.pathname}`)) return false;
 
   initializeTrackingProviders();
