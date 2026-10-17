@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mail, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ORDER_STATUS_LABEL } from "@/app/lib/order-status";
 import type { OrderStatus } from "@prisma/client";
@@ -30,6 +31,40 @@ function pageName(path: string | null) {
 }
 function dt(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function OrderRowActions({ orderNumber, phone }: { orderNumber: string; phone: string }) {
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState<"ok" | "err" | null>(null);
+  const wa = phone ? `https://wa.me/55${onlyDigits(phone)}` : null;
+
+  async function resend() {
+    if (sending) return;
+    setSending(true);
+    setDone(null);
+    try {
+      const res = await fetch("/api/admin/order-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderNumber }) });
+      setDone(res.ok ? "ok" : "err");
+    } catch {
+      setDone("err");
+    } finally {
+      setSending(false);
+      setTimeout(() => setDone(null), 3000);
+    }
+  }
+
+  return (
+    <div className="row-actions">
+      {wa && (
+        <a className="row-btn row-btn--wa" href={wa} target="_blank" rel="noreferrer" title="Abrir WhatsApp" aria-label="Abrir WhatsApp">
+          <MessageCircle size={15} aria-hidden="true" />
+        </a>
+      )}
+      <button type="button" className={`row-btn${done === "ok" ? " is-ok" : done === "err" ? " is-err" : ""}`} onClick={resend} disabled={sending} title="Reenviar e-mail" aria-label="Reenviar e-mail">
+        <Mail size={15} aria-hidden="true" />
+      </button>
+    </div>
+  );
 }
 
 export function AdminDashboard({ initial, products }: { initial: DashboardData; products: CatalogProduct[] }) {
@@ -75,7 +110,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
         <div className="admin-table-wrap">
           {orders.length === 0 ? <p className="admin-pad admin-muted">Nenhum pedido ainda.</p> : (
             <table className="admin-table">
-              <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Contato</th><th>Local</th><th>Produto</th><th>Total</th><th>Pagamento</th><th>Entrega</th></tr></thead>
+              <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Contato</th><th>Local</th><th>Produto</th><th>Total</th><th>Pagamento</th><th>Entrega</th><th>Ações</th></tr></thead>
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.orderNumber}>
@@ -88,6 +123,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                     <td>{money(o.totalCents)}</td>
                     <td><span className={`admin-tag ${statusClass(o.status)}`}>{ORDER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}</span></td>
                     <td>{FULFILL[o.fulfillmentStatus] ?? o.fulfillmentStatus}</td>
+                    <td><OrderRowActions orderNumber={o.orderNumber} phone={o.customerPhone} /></td>
                   </tr>
                 ))}
               </tbody>
