@@ -40,6 +40,19 @@ function pageName(path: string | null) {
 function dt(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
+/** Quanto tempo a pessoa está no site (desde a 1ª vez vista na sessão). */
+function durLabel(fromIso: string): string {
+  const s = Math.max(0, Math.round((Date.now() - new Date(fromIso).getTime()) / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
+}
+/** Status de atividade a partir do último "ping". */
+function activity(lastIso: string): { live: boolean; text: string } {
+  const s = Math.max(0, Math.round((Date.now() - new Date(lastIso).getTime()) / 1000));
+  if (s < 45) return { live: true, text: "ativo agora" };
+  return { live: false, text: `visto há ${Math.max(1, Math.round(s / 60))} min` };
+}
 
 function RecoverMetaButton() {
   const [loading, setLoading] = useState(false);
@@ -178,14 +191,24 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
 
       {tab === "online" && (
         <div className="admin-table-wrap">
-          <div className="online-hero"><span className="admin-live admin-live--big"><i /> {online.count}</span><span>pessoa(s) navegando agora</span></div>
+          <div className="online-hero">
+            <span className="admin-live admin-live--big"><i /> {online.count}</span>
+            <span>pessoa(s) navegando agora<br /><small className="admin-muted">ativas nos últimos 3 min · atualiza a cada 10s</small></span>
+          </div>
           {online.rows.length === 0 ? <p className="admin-pad admin-muted">Ninguém online no momento.</p> : (
             <table className="admin-table">
-              <thead><tr><th>Página</th><th>Dispositivo</th><th>Visto há</th></tr></thead>
+              <thead><tr><th>Onde está</th><th>Dispositivo</th><th>No site há</th><th>Atividade</th></tr></thead>
               <tbody>
                 {online.rows.map((r, i) => {
-                  const secs = Math.max(0, Math.round((Date.now() - new Date(r.lastSeenAt).getTime()) / 1000));
-                  return <tr key={i}><td>{pageName(r.path)}</td><td>{r.device ?? "—"}</td><td>{secs < 60 ? `${secs}s` : `${Math.round(secs / 60)}min`}</td></tr>;
+                  const act = activity(r.lastSeenAt);
+                  return (
+                    <tr key={i}>
+                      <td>{pageName(r.path)}</td>
+                      <td>{r.device ?? "—"}</td>
+                      <td>{durLabel(r.firstSeenAt)}</td>
+                      <td><span className={act.live ? "online-dot online-dot--live" : "online-dot"}>{act.live && <i />}{act.text}</span></td>
+                    </tr>
+                  );
                 })}
               </tbody>
             </table>

@@ -4,6 +4,7 @@ import { Check, Copy, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnnounceBar } from "@/app/components/AnnounceBar";
+import { Heartbeat } from "@/app/components/Heartbeat";
 import { BrandMark } from "@/app/components/BrandMark";
 import { formatPrice } from "@/app/config/product";
 import { track } from "@/app/lib/tracking";
@@ -113,6 +114,7 @@ export function OrderClient({ orderNumber, token }: { orderNumber: string; token
 
   return (
     <div className="checkout-shell">
+      <Heartbeat />
       <AnnounceBar />
       <header className="checkout-top">
         <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>

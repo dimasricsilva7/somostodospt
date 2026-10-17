@@ -19,20 +19,20 @@ export async function touchSession(id: string, visitorId: string, path: string |
 }
 
 /** Visitantes ativos nos últimos `minutes` minutos. */
-export async function onlineNow(minutes = 5, limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {
+export async function onlineNow(minutes = 3, limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {
   try {
     const since = new Date(Date.now() - minutes * 60_000);
     const [count, sessions] = await Promise.all([
       db.visitorSession.count({ where: { lastSeenAt: { gte: since } } }),
       db.visitorSession.findMany({ where: { lastSeenAt: { gte: since } }, orderBy: { lastSeenAt: "desc" }, take: limit }),
     ]);
-    return { count, rows: sessions.map((s) => ({ path: s.path, device: s.device, lastSeenAt: s.lastSeenAt.toISOString() })), ok: true };
+    return { count, rows: sessions.map((s) => ({ path: s.path, device: s.device, lastSeenAt: s.lastSeenAt.toISOString(), firstSeenAt: s.firstSeenAt.toISOString() })), ok: true };
   } catch {
     return { count: 0, rows: [], ok: false };
   }
 }
 
-export async function onlineCount(minutes = 5): Promise<number> {
+export async function onlineCount(minutes = 3): Promise<number> {
   try {
     return await db.visitorSession.count({ where: { lastSeenAt: { gte: new Date(Date.now() - minutes * 60_000) } } });
   } catch {

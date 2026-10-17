@@ -25,7 +25,7 @@ export type AbandonedLead = {
   updatedAt: string;
 };
 
-export type OnlineRow = { path: string | null; device: string | null; lastSeenAt: string };
+export type OnlineRow = { path: string | null; device: string | null; lastSeenAt: string; firstSeenAt: string };
 
 export type DashboardStats = { revenueCents: number; total: number; paid: number; pending: number };
 
