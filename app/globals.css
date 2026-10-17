@@ -405,6 +405,7 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .admin-box { padding: 18px; background: #fff; border: 1px solid var(--line); }
 .admin-box p { margin: 0 0 6px; font-size: .9rem; }
 .admin-box .admin-h2 { margin-bottom: 10px; }
+.resend-email { margin-top: 12px; display: grid; gap: 6px; justify-items: start; }
 .admin-fulfill { margin-top: 14px; gap: 10px; }
 .admin-fulfill select { min-height: 44px; padding: 10px 12px; border: 1px solid #c7c7c7; border-radius: 3px; font: inherit; font-size: .95rem; background: #fff; }
 .admin-timeline { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }

@@ -98,6 +98,15 @@ export function renderExpired(p: { name: string; orderNumber: string; productNam
   );
 }
 
+export function renderPending(p: { name: string; orderNumber: string; productName: string; size: string; totalCents: number; url: string }): string {
+  return base(
+    "Seu pedido está aguardando pagamento",
+    `<p>Olá, ${p.name}. Seu pedido <strong>${p.orderNumber}</strong> (${p.productName} · ${p.size} · <strong>${brl(p.totalCents)}</strong>) está quase lá!</p>
+     <p>Pague com PIX para confirmar. Se o código tiver expirado, é só gerar um novo na página do pedido. Entrega em <strong>2 a 3 dias úteis</strong>, frete grátis.</p>
+     <p>${button(p.url, "Pagar com PIX")}</p>`
+  );
+}
+
 export function renderAbandoned(p: { name: string | null; productName: string | null; url: string }): string {
   const hi = p.name ? `Olá, ${p.name}.` : "Olá!";
   const prod = p.productName ? ` da <strong>${p.productName}</strong>` : "";

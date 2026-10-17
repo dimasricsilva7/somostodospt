@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@/app/lib/db";
 import { siteUrl } from "@/app/lib/env";
 import { log } from "@/app/lib/log";
-import { emailEnabled, renderAbandoned, renderExpired, renderPaid, sendMail } from "@/app/lib/email";
+import { emailEnabled, renderAbandoned, renderExpired, renderPaid, renderPending, sendMail } from "@/app/lib/email";
 
 const firstName = (name: string | null | undefined) => (name ? name.split(/\s+/)[0] : "");
 
@@ -38,6 +38,30 @@ export async function emailOrderExpired(orderId: string): Promise<void> {
   );
   if (!ok) await db.order.updateMany({ where: { id: orderId }, data: { emailExpiredAt: null } });
   else log.info("email", "pix expirado enviado", { order: order.orderNumber });
+}
+
+/** Reenvio manual pelo admin — manda o e-mail conforme o status atual do pedido. */
+export async function resendOrderEmail(orderId: string): Promise<{ sent: boolean; reason?: string }> {
+  if (!emailEnabled()) return { sent: false, reason: "email_disabled" };
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { customer: { select: { email: true, name: true } } } });
+  if (!order?.customer.email) return { sent: false, reason: "no_email" };
+  const name = firstName(order.customer.name);
+  const url = `${siteUrl()}/pedido/${order.orderNumber}?t=${order.accessToken}`;
+
+  let subject: string;
+  let html: string;
+  if (order.status === "PAID") {
+    subject = `Pagamento confirmado — pedido ${order.orderNumber}`;
+    html = renderPaid({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, totalCents: order.totalCents, url });
+  } else if (order.status === "EXPIRED") {
+    subject = `Seu PIX expirou — pedido ${order.orderNumber}`;
+    html = renderExpired({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, url });
+  } else {
+    subject = `Seu pedido ${order.orderNumber} está aguardando pagamento`;
+    html = renderPending({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, totalCents: order.totalCents, url });
+  }
+  const sent = await sendMail(order.customer.email, subject, html);
+  return { sent, reason: sent ? undefined : "send_failed" };
 }
 
 /** E-mail de recuperação de carrinho abandonado (cron). Envia uma vez por lead. */
