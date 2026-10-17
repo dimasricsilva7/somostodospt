@@ -437,6 +437,68 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .admin-timeline li { display: grid; grid-template-columns: 90px 1fr; gap: 10px; font-size: .8rem; }
 .admin-timeline li span:first-child { color: #999; }
 @media (max-width: 560px) { .admin-order-grid { grid-template-columns: 1fr; } }
+
+/* ───────────────────────── Modernização visual ───────────────────────── */
+:root {
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px;
+  --shadow-soft: 0 10px 30px rgb(22 0 4 / .08);
+  --shadow-card: 0 16px 44px rgb(22 0 4 / .12);
+}
+
+/* Revelar ao rolar */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s cubic-bezier(.2, .7, .2, 1), transform .7s cubic-bezier(.2, .7, .2, 1); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* Botões — cantos suaves + sombra + feedback */
+.button { border-radius: 10px; box-shadow: 0 6px 16px rgb(217 0 24 / .18); }
+.button--light { color: var(--red-dark); box-shadow: 0 6px 18px rgb(0 0 0 / .12); }
+.button--outline { box-shadow: none; }
+.button--large { border-radius: 12px; }
+.button--small { border-radius: 8px; }
+.button--header { border-radius: 9px; }
+.button:active { transform: translateY(0); }
+
+/* Mídia e cards arredondados */
+.product-media { border-radius: var(--r-lg); }
+.hero-section__visual .product-media { overflow: hidden; border-radius: var(--r-lg); }
+.gallery__viewer { border-radius: var(--r-md); }
+.catalog-card { border-radius: var(--r-lg); box-shadow: var(--shadow-soft); }
+.catalog-card:hover { box-shadow: var(--shadow-card); }
+.catalog-card__media .product-media { border-radius: 0; }
+.catalog-card__media .product-media__image { transition: transform .5s ease; }
+.catalog-card:hover .catalog-card__media .product-media__image { transform: scale(1.04); }
+.catalog-card__badge { border-radius: 6px; }
+.offer-card { border-radius: var(--r-xl); box-shadow: var(--shadow-card); }
+.spec-card, .trust-card, .review-card { border-radius: var(--r-md); }
+.trust-card, .review-card { box-shadow: var(--shadow-soft); transition: transform .25s ease, box-shadow .25s ease; }
+.trust-card:hover, .review-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); }
+.highlight-list__item { transition: transform .2s ease; }
+
+/* Formulários e checkout */
+.field input, .field textarea, .admin-field input, .admin-field textarea, .admin-fulfill select { border-radius: 10px; }
+.size-button { border-radius: 9px; }
+.checkout-form, .checkout-summary, .pix-box, .order-result, .order-summary-head, .checkout-empty, .admin-card, .spec-card { border-radius: var(--r-lg); }
+.checkout-summary { box-shadow: var(--shadow-soft); }
+.pix-qr { border-radius: var(--r-md); }
+
+/* Modais, toasts e banner */
+.modal-card { border-radius: var(--r-xl); }
+.cookie-banner { border-radius: var(--r-md); box-shadow: var(--shadow-card); }
+.notice-toast { border-radius: var(--r-md); }
+
+/* Header: links com sublinhado animado */
+.site-nav a { position: relative; padding-bottom: 2px; }
+.site-nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -2px; height: 2px; background: var(--red); transition: right .25s ease; }
+.site-nav a:hover::after { right: 0; }
+
+/* Entrada suave do hero no carregamento */
+@keyframes stpt-hero-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.hero-section__copy > * { animation: stpt-hero-in .6s cubic-bezier(.2, .7, .2, 1) both; }
+.hero-section__copy > *:nth-child(2) { animation-delay: .06s; }
+.hero-section__copy > *:nth-child(3) { animation-delay: .12s; }
+.hero-section__copy > *:nth-child(4) { animation-delay: .18s; }
+.hero-section__copy > *:nth-child(5) { animation-delay: .24s; }
+.hero-section__copy > *:nth-child(6) { animation-delay: .3s; }
 .admin-editor__image { display: grid; justify-items: start; gap: 10px; margin-bottom: 8px; }
 .admin-editor__image img { width: 180px; height: 180px; object-fit: cover; border: 1px solid var(--line); background: #fff; }
 .admin-editor__noimg { display: grid; place-items: center; width: 180px; height: 180px; border: 1px dashed #bbb; color: #999; font-size: .8rem; }

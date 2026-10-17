@@ -32,12 +32,12 @@ export function CookieConsent() {
     <aside className="cookie-banner" aria-label="Preferências de cookies">
       <div className="cookie-banner__icon" aria-hidden="true"><Cookie size={22} /></div>
       <div className="cookie-banner__content">
-        <strong>Preferências de cookies</strong>
-        <p>Usamos armazenamento local essencial para lembrar sua escolha. Tecnologias de medição só são ativadas se você aceitar.</p>
+        <strong>Cookies</strong>
+        <p>Usamos cookies para melhorar sua experiência e medir resultados. Você pode recusar quando quiser.</p>
       </div>
       <div className="cookie-banner__actions">
         <button type="button" className="button button--small button--outline" onClick={() => decide("rejected")}>Recusar</button>
-        <button type="button" className="button button--small" onClick={() => decide("accepted")}>Aceitar medição</button>
+        <button type="button" className="button button--small" onClick={() => decide("accepted")}>Aceitar cookies</button>
       </div>
       {isOpen && choice !== "undecided" && (
         <button type="button" className="cookie-banner__close" onClick={() => setIsOpen(false)} aria-label="Fechar preferências">

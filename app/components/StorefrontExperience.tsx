@@ -12,6 +12,7 @@ import { DeliveryModal } from "./DeliveryModal";
 import { Faq } from "./Faq";
 import { ProductMedia } from "./ProductMedia";
 import { Reviews } from "./Reviews";
+import { ScrollReveal } from "./ScrollReveal";
 import { UrgencyBar } from "./UrgencyBar";
 
 function scrollToCollection() {
@@ -78,7 +79,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
         <section className="design-section">
           <div className="container design-section__layout">
             <div className="design-section__photo">
-              <ProductMedia asset={product.media[4]} sizes="(max-width: 900px) 100vw, 42vw" />
+              <ProductMedia asset={product.media[2]} sizes="(max-width: 900px) 100vw, 42vw" />
             </div>
             <div className="design-section__copy">
               <p className="eyebrow">QUALIDADE DA PEÇA</p>
@@ -106,8 +107,8 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
               <p>Informações confirmadas sobre a peça. As fotos de campanha são ilustrativas.</p>
             </div>
             <div className="details-section__grid">
-              <ProductMedia asset={product.media[5]} sizes="(max-width: 900px) 100vw, 50vw" />
-              <ProductMedia asset={product.media[1]} sizes="(max-width: 900px) 100vw, 50vw" />
+              <ProductMedia asset={product.media[3]} sizes="(max-width: 900px) 100vw, 50vw" />
+              <ProductMedia asset={product.media[6]} sizes="(max-width: 900px) 100vw, 50vw" />
               <div className="spec-card">
                 <p className="eyebrow">FICHA TÉCNICA</p>
                 <dl>
@@ -148,7 +149,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
                 VER A COLEÇÃO <ArrowRight size={19} aria-hidden="true" />
               </button>
             </div>
-            <ProductMedia asset={product.media[6]} sizes="(max-width: 900px) 100vw, 42vw" />
+            <ProductMedia asset={product.media[8]} sizes="(max-width: 900px) 100vw, 42vw" />
           </div>
         </section>
       </main>
@@ -162,6 +163,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
         <div className="container site-footer__bottom"><span>© {new Date().getFullYear()} Somos Todos PT.</span><span>Informações legais e comerciais pendentes de cadastro.</span></div>
       </footer>
 
+      <ScrollReveal />
       <DeliveryModal />
       <CookieConsent />
     </>
