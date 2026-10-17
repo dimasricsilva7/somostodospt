@@ -50,8 +50,8 @@ function durLabel(fromIso: string): string {
 /** Status de atividade a partir do último "ping". */
 function activity(lastIso: string): { live: boolean; text: string } {
   const s = Math.max(0, Math.round((Date.now() - new Date(lastIso).getTime()) / 1000));
-  if (s < 45) return { live: true, text: "ativo agora" };
-  return { live: false, text: `visto há ${Math.max(1, Math.round(s / 60))} min` };
+  if (s < 65) return { live: true, text: "ativo agora" };
+  return { live: false, text: `saindo (${Math.max(1, Math.round(s / 60))} min)` };
 }
 
 function RecoverMetaButton() {
@@ -193,7 +193,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
         <div className="admin-table-wrap">
           <div className="online-hero">
             <span className="admin-live admin-live--big"><i /> {online.count}</span>
-            <span>pessoa(s) navegando agora<br /><small className="admin-muted">ativas nos últimos 3 min · atualiza a cada 10s</small></span>
+            <span>pessoa(s) no site agora<br /><small className="admin-muted">atividade no último minuto · atualiza a cada 10s</small></span>
           </div>
           {online.rows.length === 0 ? <p className="admin-pad admin-muted">Ninguém online no momento.</p> : (
             <table className="admin-table">

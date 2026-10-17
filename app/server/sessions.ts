@@ -18,10 +18,14 @@ export async function touchSession(id: string, visitorId: string, path: string |
     .catch(() => {});
 }
 
-/** Visitantes ativos nos últimos `minutes` minutos. */
-export async function onlineNow(minutes = 3, limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {
+// Heartbeat é a cada 25s. Janela de 60s = só quem está realmente no site agora
+// (tolera 1 ping perdido), batendo com o status "ativo agora".
+const ONLINE_WINDOW_MS = 60_000;
+
+/** Visitantes realmente ativos agora (atividade no último minuto). */
+export async function onlineNow(limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {
   try {
-    const since = new Date(Date.now() - minutes * 60_000);
+    const since = new Date(Date.now() - ONLINE_WINDOW_MS);
     const [count, sessions] = await Promise.all([
       db.visitorSession.count({ where: { lastSeenAt: { gte: since } } }),
       db.visitorSession.findMany({ where: { lastSeenAt: { gte: since } }, orderBy: { lastSeenAt: "desc" }, take: limit }),
@@ -32,9 +36,9 @@ export async function onlineNow(minutes = 3, limit = 100): Promise<{ count: numb
   }
 }
 
-export async function onlineCount(minutes = 3): Promise<number> {
+export async function onlineCount(): Promise<number> {
   try {
-    return await db.visitorSession.count({ where: { lastSeenAt: { gte: new Date(Date.now() - minutes * 60_000) } } });
+    return await db.visitorSession.count({ where: { lastSeenAt: { gte: new Date(Date.now() - ONLINE_WINDOW_MS) } } });
   } catch {
     return 0;
   }
