@@ -294,7 +294,7 @@ export type ApplyResult = { order: Order | null; previousStatus: OrderStatus | n
 export async function applyPaymentSnapshot(
   orderId: string,
   snap: PaymentSnapshot,
-  source: "webhook" | "poll" | "reconcile",
+  source: "webhook" | "poll" | "reconcile" | "admin",
   statusOverride?: PaymentStatus | null
 ): Promise<ApplyResult> {
   const order = await db.order.findUnique({ where: { id: orderId } });
@@ -478,6 +478,38 @@ export async function reconcilePending(limit = 20) {
     if (r?.status === "EXPIRED") expired++;
   }
   return { checked: pending.length, paid, expired };
+}
+
+/** Admin: consulta a BravoPay por este pedido e aplica o status (recupera pagamento que não chegou por webhook). */
+export async function adminVerifyPayment(orderId: string): Promise<{ found: boolean; paid: boolean; note?: string }> {
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order?.externalReference) return { found: false, paid: false, note: "sem_referencia" };
+  const snap = await paymentService.getPaymentStatus(order.externalReference).catch(() => null);
+  if (!snap) return { found: false, paid: false, note: "nao_encontrado_no_gateway" };
+  const r = await applyPaymentSnapshot(order.id, snap, "admin");
+  const current = r.order ?? order;
+  return { found: true, paid: current.status === "PAID", note: r.note };
+}
+
+/** Admin: marca o pedido como pago manualmente (quando o dono confirma pelo extrato). Dispara e-mail/Purchase. */
+export async function adminMarkPaid(orderId: string): Promise<{ ok: boolean; note?: string }> {
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false, note: "order_not_found" };
+  if (order.status === "PAID") return { ok: true, note: "ja_pago" };
+  const snap: PaymentSnapshot = {
+    provider: "bravopay",
+    transactionId: order.transactionId ?? `manual-${order.id}`,
+    status: "PAID",
+    amountCents: order.totalCents,
+    feeCents: null,
+    netCents: null,
+    paidAt: new Date(),
+    externalReference: order.externalReference,
+    metadata: { manual: "admin" },
+    tracking: null,
+  };
+  const r = await applyPaymentSnapshot(order.id, snap, "admin", "PAID");
+  return { ok: r.changed || r.order?.status === "PAID", note: r.note };
 }
 
 // ───────────────────────── Acesso público ao pedido ─────────────────────────

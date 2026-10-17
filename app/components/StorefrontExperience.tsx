@@ -8,6 +8,7 @@ import { AnnounceBar } from "./AnnounceBar";
 import { BrandMark } from "./BrandMark";
 import { CatalogCard } from "./CatalogCard";
 import { CookieConsent } from "./CookieConsent";
+import { DeliveryModal } from "./DeliveryModal";
 import { Faq } from "./Faq";
 import { ProductMedia } from "./ProductMedia";
 import { Reviews } from "./Reviews";
@@ -161,6 +162,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
         <div className="container site-footer__bottom"><span>© {new Date().getFullYear()} Somos Todos PT.</span><span>Informações legais e comerciais pendentes de cadastro.</span></div>
       </footer>
 
+      <DeliveryModal />
       <CookieConsent />
     </>
   );

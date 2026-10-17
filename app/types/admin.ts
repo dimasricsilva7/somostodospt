@@ -29,7 +29,10 @@ export type OnlineRow = { path: string | null; device: string | null; lastSeenAt
 
 export type DashboardStats = { revenueCents: number; total: number; paid: number; pending: number };
 
+export type DashboardPeriod = "today" | "yesterday" | "7d" | "30d" | "all";
+
 export type DashboardData = {
+  period: DashboardPeriod;
   stats: DashboardStats;
   orders: AdminOrderRow[];
   abandoned: AbandonedLead[];

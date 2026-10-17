@@ -5,11 +5,13 @@ import type { AdminOrderRow } from "@/app/types/admin";
 
 export type { AdminOrderRow };
 
-export async function listOrders(limit = 80): Promise<{ rows: AdminOrderRow[]; ok: boolean }> {
+export async function listOrders(opts: { limit?: number; since?: Date; until?: Date } = {}): Promise<{ rows: AdminOrderRow[]; ok: boolean }> {
   try {
+    const where = opts.since || opts.until ? { createdAt: { ...(opts.since ? { gte: opts.since } : {}), ...(opts.until ? { lt: opts.until } : {}) } } : {};
     const orders = await db.order.findMany({
+      where,
       orderBy: { createdAt: "desc" },
-      take: limit,
+      take: opts.limit ?? 200,
       select: {
         orderNumber: true,
         createdAt: true,

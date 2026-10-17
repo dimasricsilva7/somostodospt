@@ -32,6 +32,19 @@ export const announcement = {
   text: "FRETE GRÁTIS para todo o Brasil • Entrega em 2 a 3 dias úteis",
 } as const;
 
+/** Modal de aviso de entrega — abre após `delaySeconds` na landing (1x por sessão). */
+export const deliveryNotice = {
+  enabled: true,
+  delaySeconds: 10,
+  title: "Receba sua camiseta antes da eleição 🗳️",
+  lines: [
+    "Todas as compras estão sendo entregues em 2 a 3 dias.",
+    "Estamos realizando entregas inclusive aos finais de semana.",
+    "Temos um centro de distribuição em cada capital do Brasil para garantir o prazo correto — tudo para você receber sua camiseta a tempo.",
+  ],
+  ctaLabel: "Ver a coleção",
+} as const;
+
 export function shippingCents(): number {
   return shipping.mode === "flat" ? Math.max(0, shipping.cents) : 0;
 }

@@ -8,7 +8,15 @@ import type { OrderStatus } from "@prisma/client";
 import { formatPrice } from "@/app/config/product";
 import { productPriceCents, type CatalogProduct } from "@/app/config/catalog";
 import { onlyDigits } from "@/app/lib/validators";
-import type { DashboardData } from "@/app/types/admin";
+import type { DashboardData, DashboardPeriod } from "@/app/types/admin";
+
+const PERIODS: { key: DashboardPeriod; label: string }[] = [
+  { key: "today", label: "Hoje" },
+  { key: "yesterday", label: "Ontem" },
+  { key: "7d", label: "7 dias" },
+  { key: "30d", label: "30 dias" },
+  { key: "all", label: "Tudo" },
+];
 
 type Tab = "pedidos" | "online" | "abandonados" | "modelos";
 
@@ -70,28 +78,35 @@ function OrderRowActions({ orderNumber, phone }: { orderNumber: string; phone: s
 export function AdminDashboard({ initial, products }: { initial: DashboardData; products: CatalogProduct[] }) {
   const [data, setData] = useState<DashboardData>(initial);
   const [tab, setTab] = useState<Tab>("pedidos");
+  const [period, setPeriod] = useState<DashboardPeriod>(initial.period ?? "today");
 
   useEffect(() => {
     let alive = true;
     async function load() {
       try {
-        const res = await fetch("/api/admin/dashboard", { cache: "no-store" });
+        const res = await fetch(`/api/admin/dashboard?period=${period}`, { cache: "no-store" });
         if (res.ok && alive) setData(await res.json());
       } catch {
         /* ignore */
       }
     }
+    load(); // recarrega ao trocar de período
     const id = setInterval(load, 10_000); // atualiza tudo a cada 10s
     return () => {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+  }, [period]);
 
   const { stats, orders, abandoned, online } = data;
 
   return (
     <>
+      <div className="admin-periods" role="tablist" aria-label="Período">
+        {PERIODS.map((p) => (
+          <button key={p.key} type="button" className={period === p.key ? "is-active" : ""} aria-pressed={period === p.key} onClick={() => setPeriod(p.key)}>{p.label}</button>
+        ))}
+      </div>
       <div className="admin-stats admin-stats--4">
         <div><strong>{money(stats.revenueCents)}</strong><span>Receita (pagos)</span></div>
         <div><strong>{stats.paid}</strong><span>Pedidos pagos</span></div>

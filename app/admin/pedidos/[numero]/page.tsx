@@ -6,6 +6,7 @@ import { ORDER_STATUS_LABEL } from "@/app/lib/order-status";
 import { formatPrice } from "@/app/config/product";
 import { FulfillmentForm } from "./FulfillmentForm";
 import { ResendEmailButton } from "./ResendEmailButton";
+import { PaymentActions } from "./PaymentActions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ n
           <p>Total: <strong>{formatPrice(order.totalCents)}</strong> · Pagamento: {ORDER_STATUS_LABEL[order.status] ?? order.status}</p>
           <p className="admin-muted">Criado em {order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}{order.paidAt ? ` · Pago em ${order.paidAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}</p>
           <ResendEmailButton orderNumber={order.orderNumber!} />
+          <PaymentActions orderNumber={order.orderNumber!} status={order.status} />
         </section>
 
         <section className="admin-box">

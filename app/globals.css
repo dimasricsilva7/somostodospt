@@ -143,6 +143,14 @@ p { line-height: 1.6; }
 
 .modal-card { position: relative; width: min(540px, 100%); max-height: calc(100vh - 40px); overflow: auto; padding: clamp(30px, 6vw, 48px); background: white; box-shadow: 0 20px 70px rgb(0 0 0 / .3); }.modal-card__close { position: absolute; top: 11px; right: 11px; }.modal-card h2 { font-size: clamp(2rem, 7vw, 3rem); }.modal-card > svg { margin-bottom: 18px; color: var(--red); }.modal-card table { width: 100%; border-collapse: collapse; }.modal-card th, .modal-card td { padding: 10px; border-bottom: 1px solid var(--line); font-size: .83rem; text-align: left; }.modal-card th { font-weight: 900; }.modal-card--checkout .button { width: 100%; margin-top: 18px; }.checkout-size { display: flex; align-items: center; gap: 7px; margin: 20px 0 0; padding: 11px; background: var(--mist); font-size: .88rem; }.checkout-size svg { margin: 0; color: var(--green); }
 
+.delivery-modal { text-align: center; }
+.delivery-modal .eyebrow { text-align: center; color: var(--green); }
+.delivery-modal__icon { display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 14px; border-radius: 50%; background: #e9f7ef; color: var(--green); }
+.delivery-modal__list { list-style: none; margin: 18px 0 22px; padding: 0; display: grid; gap: 11px; text-align: left; }
+.delivery-modal__list li { position: relative; padding-left: 28px; font-size: .92rem; line-height: 1.5; }
+.delivery-modal__list li::before { content: "✓"; position: absolute; left: 0; top: 0; display: grid; width: 19px; height: 19px; place-items: center; border-radius: 50%; background: var(--green); color: #fff; font-size: .7rem; font-weight: 900; }
+.delivery-modal .button { width: 100%; }
+
 .cookie-banner { position: fixed; z-index: 50; right: 18px; bottom: 18px; display: grid; grid-template-columns: auto 1fr; width: min(620px, calc(100% - 36px)); gap: 13px; padding: 18px; border: 1px solid var(--line); background: white; box-shadow: 0 16px 38px rgb(0 0 0 / .19); }.cookie-banner__icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #fff1f2; color: var(--red); }.cookie-banner__content strong { display: block; margin-bottom: 3px; font-size: .89rem; }.cookie-banner__content p { margin: 0; color: #555; font-size: .76rem; line-height: 1.45; }.cookie-banner__actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 9px; }.cookie-banner__close { position: absolute; top: 6px; right: 6px; }
 
 .legal-page { width: min(720px, calc(100% - 40px)); min-height: 100vh; margin: auto; padding-block: 90px; }.legal-page .text-link { display: inline-block; margin-bottom: 58px; }.legal-page h1 { font-size: clamp(2.8rem, 8vw, 5rem); }.legal-page p:not(.eyebrow) { max-width: 620px; font-size: 1.05rem; }
@@ -389,6 +397,10 @@ p { line-height: 1.6; }
 .admin-tag--off { background: #f1f1f1; color: #888; }
 .admin-tag--wait { background: #fff4e5; color: #b26a00; }
 a.admin-stats { text-decoration: none; color: inherit; }
+.admin-periods { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.admin-periods button { padding: 7px 15px; border: 1px solid var(--line); border-radius: 20px; background: #fff; cursor: pointer; font-size: .8rem; font-weight: 800; color: #555; }
+.admin-periods button:hover { border-color: var(--red); color: var(--red); }
+.admin-periods button.is-active { background: var(--red); border-color: var(--red); color: #fff; }
 .admin-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; border-bottom: 2px solid var(--line); }
 .admin-tabs button { padding: 10px 16px; border: 0; border-bottom: 3px solid transparent; margin-bottom: -2px; background: none; cursor: pointer; font-size: .86rem; font-weight: 800; color: #777; }
 .admin-tabs button:hover { color: var(--ink); }
@@ -414,6 +426,9 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .admin-box p { margin: 0 0 6px; font-size: .9rem; }
 .admin-box .admin-h2 { margin-bottom: 10px; }
 .resend-email { margin-top: 12px; display: grid; gap: 6px; justify-items: start; }
+.payment-actions { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; gap: 8px; }
+.payment-actions > strong { font-size: .82rem; }
+.payment-actions__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-fulfill { margin-top: 14px; gap: 10px; }
 .admin-fulfill select { min-height: 44px; padding: 10px 12px; border: 1px solid #c7c7c7; border-radius: 3px; font: inherit; font-size: .95rem; background: #fff; }
 .admin-timeline { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
