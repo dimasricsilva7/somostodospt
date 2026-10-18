@@ -18,6 +18,7 @@ export default async function AdminHome() {
         <h1>Painel Somos Todos PT</h1>
         <div className="admin-top__actions">
           <Link href="/" className="admin-link" target="_blank">Ver a loja ↗</Link>
+          <Link href="/admin/ofertas" className="admin-link">Ofertas</Link>
           <Link href="/admin/textos" className="admin-link">Textos da página</Link>
           <LogoutButton />
         </div>

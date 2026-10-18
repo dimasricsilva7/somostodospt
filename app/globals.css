@@ -558,6 +558,28 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .summary-rows .cart-totals__disc dd { color: var(--green); }
 
 @media (max-width: 640px) { .cart-drawer { width: 100%; } }
+
+/* ───────────────────────── Order bumps + Upsell ───────────────────────── */
+.bumps { display: grid; gap: 10px; margin: 6px 0 4px; }
+.bump { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 11px; padding: 13px; border: 2px dashed #e0b84d; border-radius: 12px; background: #fffdf5; cursor: pointer; }
+.bump.is-on { border-style: solid; border-color: var(--green); background: #f1faf4; }
+.bump input { width: 18px; height: 18px; accent-color: var(--green); }
+.bump__img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+.bump__info { display: grid; gap: 2px; }
+.bump__info strong { font-size: .88rem; }
+.bump__info span { color: #666; font-size: .78rem; }
+.bump__price { font-weight: 900; font-size: .9rem; white-space: nowrap; }
+.bump__price s { color: #999; font-weight: 400; margin-right: 5px; }
+
+.upsell-offer { margin-top: 16px; padding: clamp(24px, 5vw, 40px); background: #fff; border: 2px solid var(--yellow); border-radius: var(--r-lg); text-align: center; box-shadow: var(--shadow-card); }
+.upsell-offer .eyebrow { color: var(--red); }
+.upsell-offer__img { width: min(260px, 80%); margin: 6px auto 14px; border-radius: var(--r-md); }
+.upsell-offer h2 { font-size: clamp(1.5rem, 4vw, 2.2rem); }
+.upsell-offer p { max-width: 460px; margin: 0 auto 10px; color: #555; }
+.upsell-offer__price { font-family: var(--display); font-size: 1.8rem; letter-spacing: -.03em; color: var(--red-dark); }
+.upsell-offer__price s { font-family: var(--body); font-size: 1rem; color: #999; margin-right: 8px; }
+.upsell-offer .button { width: 100%; margin-top: 8px; }
+.upsell-offer__decline { display: inline-block; margin-top: 14px; color: #888; }
 .admin-editor__image { display: grid; justify-items: start; gap: 10px; margin-bottom: 8px; }
 .admin-editor__image img { width: 180px; height: 180px; object-fit: cover; border: 1px solid var(--line); background: #fff; }
 .admin-editor__noimg { display: grid; place-items: center; width: 180px; height: 180px; border: 1px dashed #bbb; color: #999; font-size: .8rem; }

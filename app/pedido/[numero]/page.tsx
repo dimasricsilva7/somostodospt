@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/app/components/BrandMark";
 import { getTexts } from "@/app/server/content";
+import { getActiveUpsell } from "@/app/server/offers";
 import { OrderClient } from "./OrderClient";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,6 @@ export default async function OrderPage({
     );
   }
 
-  const texts = await getTexts();
-  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} />;
+  const [texts, upsell] = await Promise.all([getTexts(), getActiveUpsell()]);
+  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} upsell={upsell} />;
 }

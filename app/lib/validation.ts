@@ -77,6 +77,8 @@ export const checkoutSchema = z.object({
     )
     .min(1, "Seu carrinho está vazio")
     .max(10),
+  /** Order bumps marcados no checkout (IDs). O servidor revalida cada um. */
+  bumpIds: z.array(z.string().max(40)).max(3).optional(),
   customer: customerSchema,
   address: addressSchema,
   marketingConsent: z.boolean().default(false),

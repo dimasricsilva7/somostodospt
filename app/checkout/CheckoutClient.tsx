@@ -15,15 +15,17 @@ import { buildClientContext, getConsentChoice, newEventId, track } from "@/app/l
 import { addItem, clearCart, removeItem, updateQty, useCart } from "@/app/lib/cart";
 
 type CheckoutProduct = { slug: string; name: string; priceInCents: number; compareAtPriceInCents?: number; sizes: string[]; media: ProductMediaType };
+type Bump = { id: string; title: string; description: string | null; priceCents: number; compareAtPriceCents: number | null; imageUrl: string | null };
 type Fields = Record<string, string>;
 
 const CURRENCY = "BRL";
 const money = (c: number) => formatPrice(c) ?? "—";
 
-export function CheckoutClient({ products, processorName, initialSlug, initialSize }: { products: CheckoutProduct[]; processorName?: string; initialSlug?: string; initialSize?: string }) {
+export function CheckoutClient({ products, bumps = [], processorName, initialSlug, initialSize }: { products: CheckoutProduct[]; bumps?: Bump[]; processorName?: string; initialSlug?: string; initialSize?: string }) {
   const router = useRouter();
   const cart = useCart();
   const bySlug = new Map(products.map((p) => [p.slug, p]));
+  const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", cpf: "", cep: "", street: "", number: "", complement: "", district: "", city: "", state: "" });
   const [hp, setHp] = useState("");
@@ -47,7 +49,8 @@ export function CheckoutClient({ products, processorName, initialSlug, initialSi
   const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
   const discount = discountCentsFor(subtotal, count);
   const shippingCents = shipping.mode === "flat" ? shipping.cents : 0;
-  const total = subtotal - discount + shippingCents;
+  const bumpsTotal = bumps.filter((b) => selectedBumps.includes(b.id)).reduce((s, b) => s + b.priceCents, 0);
+  const total = subtotal - discount + bumpsTotal + shippingCents;
   const faltaPromo = multiBuyDiscount.enabled && count === multiBuyDiscount.minUnits - 1;
 
   useEffect(() => {
@@ -124,6 +127,7 @@ export function CheckoutClient({ products, processorName, initialSlug, initialSi
           hp,
           elapsedMs: Date.now() - startedAt.current,
           items: lines.map((l) => ({ productSlug: l.slug, size: l.size, quantity: l.qty })),
+          bumpIds: selectedBumps,
           customer: { name: form.name, email: form.email, phone: form.phone, cpf: form.cpf },
           address: { cep: form.cep, street: form.street, number: form.number, complement: form.complement, district: form.district, city: form.city, state: form.state },
           marketingConsent: consent,
@@ -241,6 +245,26 @@ export function CheckoutClient({ products, processorName, initialSlug, initialSi
             <span>Quero receber novidades e acompanhar meu pedido por e-mail e WhatsApp.</span>
           </label>
 
+          {bumps.length > 0 && (
+            <div className="bumps">
+              {bumps.map((b) => {
+                const sel = selectedBumps.includes(b.id);
+                return (
+                  <label key={b.id} className={`bump${sel ? " is-on" : ""}`}>
+                    <input type="checkbox" checked={sel} onChange={() => setSelectedBumps((cur) => (sel ? cur.filter((x) => x !== b.id) : [...cur, b.id]))} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {b.imageUrl && <img className="bump__img" src={b.imageUrl} alt="" width={48} height={48} />}
+                    <div className="bump__info">
+                      <strong>{b.title}</strong>
+                      {b.description && <span>{b.description}</span>}
+                    </div>
+                    <span className="bump__price">{b.compareAtPriceCents ? <s>{money(b.compareAtPriceCents)}</s> : null} {money(b.priceCents)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+
           {processorName && (
             <p className="processor-note">
               <ShieldCheck size={15} aria-hidden="true" />
@@ -283,6 +307,7 @@ export function CheckoutClient({ products, processorName, initialSlug, initialSi
           <dl className="summary-rows">
             <div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div>
             {discount > 0 && <div className="cart-totals__disc"><dt>Desconto</dt><dd>-{money(discount)}</dd></div>}
+            {bumpsTotal > 0 && <div><dt>Adicionais</dt><dd>{money(bumpsTotal)}</dd></div>}
             <div><dt>Frete</dt><dd>{shipping.mode === "free" ? "Grátis" : money(shippingCents)}</dd></div>
             <div className="summary-total"><dt>Total</dt><dd>{money(total)}</dd></div>
           </dl>

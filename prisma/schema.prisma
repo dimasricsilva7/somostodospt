@@ -130,6 +130,9 @@ model Order {
   /// Controle de e-mails transacionais (enviados uma única vez)
   emailPaidAt       DateTime?
   emailExpiredAt    DateTime?
+  /// Pedido de upsell aponta para o pedido original
+  parentOrderId     String?
+  source            String            @default("CHECKOUT")
 
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -221,6 +224,33 @@ model ProductContent {
   mainImageId         String?
   galleryIds          Json?
   sortOrder           Int?
+  updatedAt           DateTime @updatedAt
+}
+
+/// Oferta adicional marcável no checkout (order bump). Nasce desativada.
+model OrderBump {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String?
+  priceCents          Int
+  compareAtPriceCents Int?
+  imageId             String?
+  active              Boolean  @default(false)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+/// Oferta pós-compra (upsell) exibida na página do pedido pago. Nasce desativada.
+model Upsell {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String?
+  priceCents          Int
+  compareAtPriceCents Int?
+  imageId             String?
+  active              Boolean  @default(false)
+  createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
 

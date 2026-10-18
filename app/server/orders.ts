@@ -14,6 +14,7 @@ import { productPriceCents, sizeAvailable, type CatalogProduct } from "@/app/con
 import { sellableMerged } from "@/app/server/content";
 import { linkLeadToOrder } from "@/app/server/leads";
 import { emailOrderExpired, emailOrderPaid } from "@/app/server/emails";
+import { getBumpsByIds, getUpsellById } from "@/app/server/offers";
 import { PIX_EXPIRATION_MINUTES, discountCentsFor, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
@@ -137,9 +138,16 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
 
   const totalUnits = lines.reduce((s, l) => s + l.quantity, 0);
   const subtotalRaw = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
-  const totals = computeTotals(lines.map((l) => ({ unitPriceCents: l.unitPriceCents, quantity: l.quantity })), shippingCents(), discountCentsFor(subtotalRaw, totalUnits));
+  // Order bumps marcados no checkout (preço e disponibilidade sempre do banco; não entram no desconto das camisetas).
+  const bumps = await getBumpsByIds(input.bumpIds ?? []);
+  const bumpLines = bumps.map((b) => ({ productSlug: `bump-${b.id}`, productName: b.title, sku: `BUMP-${b.id.slice(0, 20)}`, size: "-", quantity: 1, unitPriceCents: b.priceCents, listPriceCents: b.compareAtPriceCents }));
+  const totals = computeTotals(
+    [...lines.map((l) => ({ unitPriceCents: l.unitPriceCents, quantity: l.quantity })), ...bumpLines.map((b) => ({ unitPriceCents: b.unitPriceCents, quantity: 1 }))],
+    shippingCents(),
+    discountCentsFor(subtotalRaw, totalUnits)
+  );
   if (totals.totalCents < MIN_PIX_CENTS) throw new CheckoutError("O valor mínimo para pagamento via PIX é R$ 5,00.");
-  const summary = lines.map((l) => `${l.quantity}× ${l.model.shortName || l.model.name} (${l.size})`).join(" · ");
+  const summary = [...lines.map((l) => `${l.quantity}× ${l.model.shortName || l.model.name} (${l.size})`), ...bumpLines.map((b) => `+ ${b.productName}`)].join(" · ");
 
   const attr = attributionFields(input.context);
   const shippingAddress = { cep: input.address.cep, street: input.address.street, number: input.address.number, complement: input.address.complement || null, district: input.address.district, city: input.address.city, state: input.address.state };
@@ -165,7 +173,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
           quantity: totalUnits,
           unitPriceCents: lines[0].unitPriceCents,
           listPriceCents: lines[0].listPriceCents,
-          items: { create: lines.map((l) => ({ productSlug: l.model.slug, productName: l.model.name, sku: l.model.sku, size: l.size, quantity: l.quantity, unitPriceCents: l.unitPriceCents, listPriceCents: l.listPriceCents })) },
+          items: { create: [...lines.map((l) => ({ productSlug: l.model.slug, productName: l.model.name, sku: l.model.sku, size: l.size, quantity: l.quantity, unitPriceCents: l.unitPriceCents, listPriceCents: l.listPriceCents })), ...bumpLines.map((b) => ({ productSlug: b.productSlug, productName: b.productName, sku: b.sku, size: b.size, quantity: 1, unitPriceCents: b.unitPriceCents, listPriceCents: b.listPriceCents }))] },
           ...totals,
           paymentProvider: "bravopay",
           status: "PENDING",
@@ -583,6 +591,88 @@ export async function resendRecentPurchases(days = 7): Promise<{ sent: number; t
     if (r.sent) sent++;
   }
   return { sent, total: paid.length };
+}
+
+/**
+ * Aceite de upsell (na página do pedido pago): cria um NOVO pedido PIX vinculado
+ * ao original (mesmo cliente, endereço e atribuição). Idempotente por checkoutToken.
+ */
+export async function acceptUpsell(parentOrderNumber: string, token: string, upsellId: string): Promise<{ orderNumber: string; token: string } | { error: string }> {
+  const parent = await findOrderByAccess(parentOrderNumber, token);
+  if (!parent) return { error: "Pedido não encontrado." };
+  const upsell = await getUpsellById(upsellId);
+  if (!upsell || !upsell.active) return { error: "Esta oferta não está mais disponível." };
+  if (bravopayMode() === "disabled") return { error: "PIX indisponível no momento." };
+
+  const checkoutToken = `upsell-${parent.id}-${upsellId}`.slice(0, 64);
+  const existing = await db.order.findUnique({ where: { checkoutToken } }).catch(() => null);
+  if (existing) {
+    const full = await ensurePix(existing.id);
+    return { orderNumber: full.orderNumber!, token: full.accessToken };
+  }
+  const totals = computeTotals([{ unitPriceCents: upsell.priceCents, quantity: 1 }], shippingCents());
+  if (totals.totalCents < MIN_PIX_CENTS) return { error: "Valor abaixo do mínimo do PIX." };
+
+  let order: Order;
+  try {
+    order = await db.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          customerId: parent.customerId,
+          customerSnapshot: parent.customerSnapshot as Prisma.InputJsonValue,
+          shippingAddress: (parent.shippingAddress ?? undefined) as Prisma.InputJsonValue | undefined,
+          productSlug: `upsell-${upsellId}`,
+          productName: `1× ${upsell.title}`,
+          sku: `UPSELL-${upsellId.slice(0, 20)}`,
+          size: "",
+          quantity: 1,
+          unitPriceCents: upsell.priceCents,
+          listPriceCents: upsell.compareAtPriceCents,
+          ...totals,
+          paymentProvider: "bravopay",
+          status: "PENDING",
+          checkoutToken,
+          accessToken: randomToken(24),
+          parentOrderId: parent.id,
+          source: "UPSELL",
+          adsConsent: parent.adsConsent,
+          utmSource: parent.utmSource,
+          utmMedium: parent.utmMedium,
+          utmCampaign: parent.utmCampaign,
+          utmContent: parent.utmContent,
+          utmTerm: parent.utmTerm,
+          fbclid: parent.fbclid,
+          gclid: parent.gclid,
+          ttclid: parent.ttclid,
+          fbp: parent.fbp,
+          fbc: parent.fbc,
+          sessionId: parent.sessionId,
+          visitorId: parent.visitorId,
+          device: parent.device,
+          userAgent: parent.userAgent,
+          ipHash: parent.ipHash,
+          channel: parent.channel,
+          landingPage: parent.landingPage,
+          items: { create: [{ productSlug: `upsell-${upsellId}`, productName: upsell.title, sku: `UPSELL-${upsellId.slice(0, 20)}`, size: "-", quantity: 1, unitPriceCents: upsell.priceCents, listPriceCents: upsell.compareAtPriceCents }] },
+        },
+      });
+      const orderNumber = await uniqueOrderNumber(tx, created.seq);
+      return tx.order.update({ where: { id: created.id }, data: { orderNumber, externalReference: orderNumber, metaEventId: `purchase_${created.id}` } });
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const again = await db.order.findUnique({ where: { checkoutToken } });
+      if (again) {
+        const full = await ensurePix(again.id);
+        return { orderNumber: full.orderNumber!, token: full.accessToken };
+      }
+    }
+    throw err;
+  }
+
+  await logOrderEvent(order.id, "upsell_accepted", `Upsell aceito — novo pedido ${order.orderNumber} (origem: ${parent.orderNumber})`, { upsell: upsell.title });
+  const result = await ensurePix(order.id);
+  return { orderNumber: result.orderNumber!, token: result.accessToken };
 }
 
 // ───────────────────────── Acesso público ao pedido ─────────────────────────

@@ -11,11 +11,12 @@ import { track } from "@/app/lib/tracking";
 import type { PublicOrder } from "@/app/types/order";
 
 type ApiResponse = { order: PublicOrder; qr: string | null };
+type Upsell = { id: string; title: string; description: string | null; priceCents: number; compareAtPriceCents: number | null; imageUrl: string | null };
 
 const money = (c: number) => formatPrice(c) ?? "—";
 const AWAITING = ["PENDING", "PIX_GENERATED"];
 
-export function OrderClient({ orderNumber, token, processorName }: { orderNumber: string; token: string; processorName?: string }) {
+export function OrderClient({ orderNumber, token, processorName, upsell }: { orderNumber: string; token: string; processorName?: string; upsell?: Upsell | null }) {
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -193,6 +194,8 @@ export function OrderClient({ orderNumber, token, processorName }: { orderNumber
               </div>
             )}
 
+            {order.status === "PAID" && upsell && <UpsellOffer upsell={upsell} orderNumber={orderNumber} token={token} />}
+
             {order.status === "EXPIRED" && (
               <div className="order-result order-result--warn">
                 <h1>PIX expirado</h1>
@@ -220,6 +223,46 @@ export function OrderClient({ orderNumber, token, processorName }: { orderNumber
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function UpsellOffer({ upsell, orderNumber, token }: { upsell: Upsell; orderNumber: string; token: string }) {
+  const [loading, setLoading] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [err, setErr] = useState<string>();
+  if (dismissed) return null;
+
+  async function accept() {
+    if (loading) return;
+    setLoading(true);
+    setErr(undefined);
+    try {
+      const res = await fetch("/api/orders/upsell", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: orderNumber, token, upsellId: upsell.id }) });
+      const data = (await res.json().catch(() => ({}))) as { orderNumber?: string; token?: string; error?: string };
+      if (res.ok && data.orderNumber && data.token) {
+        window.location.assign(`/pedido/${encodeURIComponent(data.orderNumber)}?t=${encodeURIComponent(data.token)}`);
+        return;
+      }
+      setErr(data.error ?? "Não foi possível adicionar.");
+      setLoading(false);
+    } catch {
+      setErr("Falha de conexão.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="upsell-offer">
+      <span className="eyebrow">OFERTA ESPECIAL — SÓ AGORA</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {upsell.imageUrl && <img className="upsell-offer__img" src={upsell.imageUrl} alt="" />}
+      <h2>{upsell.title}</h2>
+      {upsell.description && <p>{upsell.description}</p>}
+      <p className="upsell-offer__price">{upsell.compareAtPriceCents ? <s>{money(upsell.compareAtPriceCents)}</s> : null} <strong>{money(upsell.priceCents)}</strong></p>
+      {err && <p className="admin-error">{err}</p>}
+      <button type="button" className="button button--large" onClick={accept} disabled={loading}>{loading ? "Gerando PIX…" : "SIM, QUERO ADICIONAR"}</button>
+      <button type="button" className="text-link upsell-offer__decline" onClick={() => setDismissed(true)}>Não, obrigado</button>
     </div>
   );
 }

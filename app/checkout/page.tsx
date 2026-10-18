@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { mergedCatalog, getTexts } from "@/app/server/content";
+import { listActiveBumps } from "@/app/server/offers";
 import { productPriceCents } from "@/app/config/catalog";
 import { CheckoutClient } from "./CheckoutClient";
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string; tam?: string }> }) {
   const { produto, tam } = await searchParams;
-  const [catalog, texts] = await Promise.all([mergedCatalog(), getTexts()]);
+  const [catalog, texts, bumps] = await Promise.all([mergedCatalog(), getTexts(), listActiveBumps()]);
 
   const products = catalog
     .map((p) => {
@@ -25,6 +26,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   return (
     <CheckoutClient
       products={products}
+      bumps={bumps}
       processorName={texts.paymentProcessorName}
       initialSlug={produto}
       initialSize={tam?.toUpperCase()}
