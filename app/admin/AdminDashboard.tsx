@@ -177,7 +177,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                     <td>{o.customerName}</td>
                     <td className="admin-contact">{o.customerEmail && <span>{o.customerEmail}</span>}{o.customerPhone && <span>{o.customerPhone}</span>}</td>
                     <td>{o.city}{o.city && o.state ? "/" : ""}{o.state}</td>
-                    <td>{o.productName}{o.size && o.size !== "vários" && !o.productName.includes("×") ? ` · ${o.size}` : ""}</td>
+                    <td className="col-produto">{o.productName}{o.size && o.size !== "vários" && !o.productName.includes("×") ? ` · ${o.size}` : ""}</td>
                     <td>{money(o.totalCents)}</td>
                     <td><span className={`admin-tag ${statusClass(o.status)}`}>{ORDER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}</span></td>
                     <td>{FULFILL[o.fulfillmentStatus] ?? o.fulfillmentStatus}</td>

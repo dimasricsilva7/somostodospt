@@ -430,6 +430,7 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .admin-table th, .admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 .admin-table th { background: var(--mist); font-weight: 900; font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; }
 .admin-table tr:last-child td { border-bottom: 0; }
+.admin-table td.col-produto { white-space: normal; min-width: 220px; max-width: 360px; font-size: .74rem; line-height: 1.35; color: #444; }
 .admin-order-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .admin-box { padding: 18px; background: #fff; border: 1px solid var(--line); }
 .admin-box p { margin: 0 0 6px; font-size: .9rem; }
