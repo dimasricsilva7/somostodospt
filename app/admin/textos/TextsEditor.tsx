@@ -11,6 +11,7 @@ const LABELS: Record<keyof SiteTexts, string> = {
   heroStatement: "Frase de destaque (pagamento/entrega)",
   collectionTitle: "Título da coleção",
   collectionSubtitle: "Subtítulo da coleção",
+  paymentProcessorName: "Nome do recebedor no PIX (adquirente)",
 };
 
 const MULTI: (keyof SiteTexts)[] = ["heroLead", "heroStatement", "collectionSubtitle"];

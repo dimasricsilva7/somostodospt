@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/app/components/BrandMark";
+import { getTexts } from "@/app/server/content";
 import { OrderClient } from "./OrderClient";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Seu pedido",
@@ -31,5 +34,6 @@ export default async function OrderPage({
     );
   }
 
-  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} />;
+  const texts = await getTexts();
+  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} />;
 }

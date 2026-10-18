@@ -247,6 +247,10 @@ p { line-height: 1.6; }
 .consent-row input { margin-top: 3px; width: 17px; height: 17px; flex: 0 0 auto; accent-color: var(--red); }
 .checkout-error { margin: 0 0 16px; padding: 12px 14px; border-left: 3px solid var(--red); background: #fff4f5; color: var(--red-dark); font-size: .85rem; font-weight: 700; }
 .pay-button { width: 100%; }
+.processor-note { display: flex; align-items: flex-start; gap: 9px; margin: 14px 0 0; padding: 12px 14px; border: 1px solid #cde9d6; border-radius: 10px; background: #f1faf4; color: #2b6b45; font-size: .82rem; line-height: 1.45; text-align: left; }
+.processor-note svg { flex: 0 0 auto; margin-top: 1px; color: var(--green); }
+.processor-note strong { color: #184a2e; }
+.processor-note--pix { margin: 16px auto; max-width: 440px; }
 .secure-note { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; color: #666; font-size: .76rem; }
 .secure-note svg { flex: 0 0 auto; color: var(--green); }
 

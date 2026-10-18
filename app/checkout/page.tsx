@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getProduct, productPriceCents } from "@/app/config/catalog";
-import { sellableMerged } from "@/app/server/content";
+import { getTexts, sellableMerged } from "@/app/server/content";
 import { BrandMark } from "@/app/components/BrandMark";
 import { CheckoutClient } from "./CheckoutClient";
 
@@ -35,6 +35,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   const requested = tam?.toUpperCase();
   const initialSize = requested && model.sizes.includes(requested) ? requested : undefined;
+  const texts = await getTexts();
 
   return (
     <CheckoutClient
@@ -47,6 +48,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         media: model.media[0],
       }}
       initialSize={initialSize}
+      processorName={texts.paymentProcessorName}
     />
   );
 }

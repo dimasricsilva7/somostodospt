@@ -6,7 +6,7 @@ import { log } from "@/app/lib/log";
 
 export const dynamic = "force-dynamic";
 
-const KEYS: (keyof SiteTexts)[] = ["heroEyebrow", "heroTitle", "heroLead", "heroStatement", "collectionTitle", "collectionSubtitle"];
+const KEYS: (keyof SiteTexts)[] = ["heroEyebrow", "heroTitle", "heroLead", "heroStatement", "collectionTitle", "collectionSubtitle", "paymentProcessorName"];
 
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });

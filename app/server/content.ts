@@ -17,6 +17,7 @@ export const DEFAULT_TEXTS: SiteTexts = {
   heroStatement: "Pagamento por PIX com confirmação automática e entrega para todo o Brasil.",
   collectionTitle: "Escolha a sua camiseta.",
   collectionSubtitle: "Cada modelo tem sua estampa. Selecione o tamanho no card e finalize com PIX.",
+  paymentProcessorName: "GBK LTDA",
 };
 
 export async function getTexts(): Promise<SiteTexts> {

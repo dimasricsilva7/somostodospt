@@ -5,4 +5,6 @@ export type SiteTexts = {
   heroStatement: string;
   collectionTitle: string;
   collectionSubtitle: string;
+  /** Nome que aparece como recebedor do PIX (adquirente). Editável no admin. */
+  paymentProcessorName: string;
 };

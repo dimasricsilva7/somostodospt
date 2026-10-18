@@ -28,7 +28,7 @@ type Fields = Record<string, string>;
 const CURRENCY = "BRL";
 const money = (c: number) => formatPrice(c) ?? "—";
 
-export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; initialSize?: string }) {
+export function CheckoutClient({ model, initialSize, processorName }: { model: CheckoutModel; initialSize?: string; processorName?: string }) {
   const router = useRouter();
   const sizes = model.sizes;
   const unitPrice = model.priceInCents;
@@ -245,6 +245,13 @@ export function CheckoutClient({ model, initialSize }: { model: CheckoutModel; i
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>Quero receber novidades e acompanhar meu pedido por e-mail e WhatsApp.</span>
           </label>
+
+          {processorName && (
+            <p className="processor-note">
+              <ShieldCheck size={15} aria-hidden="true" />
+              <span>No app do seu banco, o pagamento aparece como <strong>{processorName}</strong> — é o processador de pagamentos oficial da Somos Todos PT. Pode concluir com tranquilidade.</span>
+            </p>
+          )}
 
           {error && <p className="checkout-error" role="alert">{error}</p>}
 

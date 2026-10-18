@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Loader2, RefreshCw } from "lucide-react";
+import { Check, Copy, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnnounceBar } from "@/app/components/AnnounceBar";
@@ -15,7 +15,7 @@ type ApiResponse = { order: PublicOrder; qr: string | null };
 const money = (c: number) => formatPrice(c) ?? "—";
 const AWAITING = ["PENDING", "PIX_GENERATED"];
 
-export function OrderClient({ orderNumber, token }: { orderNumber: string; token: string }) {
+export function OrderClient({ orderNumber, token, processorName }: { orderNumber: string; token: string; processorName?: string }) {
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,6 +152,13 @@ export function OrderClient({ orderNumber, token }: { orderNumber: string; token
                     {copied ? <><Check size={15} aria-hidden="true" /> Copiado</> : <><Copy size={15} aria-hidden="true" /> Copiar código</>}
                   </button>
                 </div>
+
+                {processorName && (
+                  <p className="processor-note processor-note--pix">
+                    <ShieldCheck size={15} aria-hidden="true" />
+                    <span>O recebedor aparece como <strong>{processorName}</strong> — é o processador de pagamentos oficial da Somos Todos PT. Seu pedido <strong>{order.orderNumber}</strong> está associado à sua compra.</span>
+                  </p>
+                )}
 
                 <div className="pix-status">
                   <Loader2 size={16} className="spin" aria-hidden="true" />
