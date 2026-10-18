@@ -9,6 +9,7 @@ import { formatPrice } from "@/app/config/product";
 import { productPriceCents, type CatalogProduct } from "@/app/config/catalog";
 import { onlyDigits } from "@/app/lib/validators";
 import type { DashboardData, DashboardPeriod } from "@/app/types/admin";
+import { LeadEmailButton } from "./LeadEmailButton";
 
 const PERIODS: { key: DashboardPeriod; label: string }[] = [
   { key: "today", label: "Hoje" },
@@ -231,7 +232,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                       <td className="admin-contact">{l.email && <span>{l.email}</span>}{l.phone && <span>{l.phone}</span>}</td>
                       <td>{l.productName ?? "—"}{l.size ? ` · ${l.size}` : ""}</td>
                       <td>{money(l.totalCents)}</td>
-                      <td>{wa && <a className="admin-link" href={wa} target="_blank" rel="noreferrer">WhatsApp ↗</a>}</td>
+                      <td><div className="lead-actions">{wa && <a className="admin-link" href={wa} target="_blank" rel="noreferrer">WhatsApp ↗</a>}<LeadEmailButton email={l.email} /></div></td>
                     </tr>
                   );
                 })}

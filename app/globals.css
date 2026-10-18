@@ -434,6 +434,10 @@ a.admin-stats { text-decoration: none; color: inherit; }
 .admin-box { padding: 18px; background: #fff; border: 1px solid var(--line); }
 .admin-box p { margin: 0 0 6px; font-size: .9rem; }
 .admin-box .admin-h2 { margin-bottom: 10px; }
+.lead-actions { display: inline-flex; gap: 12px; align-items: center; }
+.lead-email { display: inline-flex; align-items: center; gap: 4px; }
+.lead-email.is-ok { color: var(--green); }
+.lead-email.is-err { color: var(--red); }
 .admin-items { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 5px; }
 .admin-items li { font-size: .88rem; }
 .resend-email { margin-top: 12px; display: grid; gap: 6px; justify-items: start; }

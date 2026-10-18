@@ -4,6 +4,7 @@ import { isAuthed } from "@/app/lib/auth";
 import { listAbandoned } from "@/app/server/leads";
 import { formatPrice } from "@/app/config/product";
 import { onlyDigits } from "@/app/lib/validators";
+import { LeadEmailButton } from "../LeadEmailButton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function AdminAbandonedPage() {
                     <td>{l.email ?? ""}{l.email && l.phone ? " · " : ""}{l.phone ?? ""}</td>
                     <td>{l.productName ?? "—"}{l.size ? ` · ${l.size}` : ""}</td>
                     <td>{formatPrice(l.totalCents)}</td>
-                    <td>{wa && <a className="admin-link" href={wa} target="_blank" rel="noreferrer">WhatsApp ↗</a>}</td>
+                    <td><div className="lead-actions">{wa && <a className="admin-link" href={wa} target="_blank" rel="noreferrer">WhatsApp ↗</a>}<LeadEmailButton email={l.email} /></div></td>
                   </tr>
                 );
               })}

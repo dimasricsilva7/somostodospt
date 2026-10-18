@@ -64,6 +64,17 @@ export async function resendOrderEmail(orderId: string): Promise<{ sent: boolean
   return { sent, reason: sent ? undefined : "send_failed" };
 }
 
+/** Reenvio manual pelo admin — recuperação de carrinho para o lead mais recente com este e-mail. */
+export async function emailAbandonedLead(email: string): Promise<{ sent: boolean; reason?: string }> {
+  if (!emailEnabled()) return { sent: false, reason: "email_disabled" };
+  const lead = await db.checkoutLead.findFirst({ where: { email, orderId: null }, orderBy: { updatedAt: "desc" } });
+  if (!lead?.email) return { sent: false, reason: "not_found" };
+  const url = lead.productSlug ? `${siteUrl()}/checkout?produto=${encodeURIComponent(lead.productSlug)}` : `${siteUrl()}/`;
+  const ok = await sendMail(lead.email, "Você esqueceu algo no carrinho 👀", renderAbandoned({ name: lead.name, productName: lead.productName, url }));
+  if (ok) await db.checkoutLead.update({ where: { id: lead.id }, data: { emailSentAt: new Date() } }).catch(() => {});
+  return { sent: ok, reason: ok ? undefined : "send_failed" };
+}
+
 /** E-mail de recuperação de carrinho abandonado (cron). Envia uma vez por lead. */
 export async function emailAbandonedLeads(minMinutes = 20, maxAgeHours = 48, limit = 30): Promise<{ sent: number }> {
   if (!emailEnabled()) return { sent: 0 };
