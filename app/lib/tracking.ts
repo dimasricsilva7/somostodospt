@@ -4,6 +4,7 @@ export type TrackingEvent =
   | "ViewContent"
   | "SelectSize"
   | "CTAClick"
+  | "AddToCart"
   | "InitiateCheckout"
   | "AddPaymentInfo"
   | "Purchase";
@@ -224,7 +225,7 @@ export function track(event: TrackingEvent, payload: TrackingPayload = {}, opts:
   win.dataLayer.push({ event, ...cleanPayload });
 
   const fbOptions = opts.eventId ? { eventID: opts.eventId } : undefined;
-  const standard: TrackingEvent[] = ["PageView", "ViewContent", "InitiateCheckout", "AddPaymentInfo", "Purchase"];
+  const standard: TrackingEvent[] = ["PageView", "ViewContent", "AddToCart", "InitiateCheckout", "AddPaymentInfo", "Purchase"];
   if (standard.includes(event)) {
     win.fbq?.("track", event, cleanPayload, fbOptions);
   } else {

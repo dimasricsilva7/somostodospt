@@ -1,17 +1,17 @@
 "use client";
 
-import { ArrowRight, ImageOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Check, ImageOff, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { formatPrice } from "@/app/config/product";
 import { productPriceCents, type CatalogProduct } from "@/app/config/catalog";
+import { addItem } from "@/app/lib/cart";
 import { newEventId, track } from "@/app/lib/tracking";
 import { ProductMedia } from "./ProductMedia";
 
 export function CatalogCard({ product }: { product: CatalogProduct }) {
-  const router = useRouter();
   const [size, setSize] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  const [added, setAdded] = useState(false);
 
   const price = productPriceCents(product);
   const priceLabel = price !== undefined ? formatPrice(price) : undefined;
@@ -24,14 +24,16 @@ export function CatalogCard({ product }: { product: CatalogProduct }) {
     track("SelectSize", { content_name: product.name, size: s });
   }
 
-  function buy() {
-    track("CTAClick", { source: "catalogo", content_name: product.name });
+  function addToCart() {
     if (!size) {
       setNotice("Escolha um tamanho.");
       return;
     }
-    track("InitiateCheckout", { content_name: product.name, size, currency: "BRL", value: (price ?? 0) / 100 }, { eventId: newEventId() });
-    router.push(`/checkout?produto=${encodeURIComponent(product.slug)}&tam=${encodeURIComponent(size)}`);
+    addItem(product.slug, size, 1);
+    track("AddToCart", { content_name: product.name, size, currency: "BRL", value: (price ?? 0) / 100 }, { eventId: newEventId() });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+    window.dispatchEvent(new Event("stpt-open-cart"));
   }
 
   return (
@@ -69,8 +71,8 @@ export function CatalogCard({ product }: { product: CatalogProduct }) {
               ))}
             </div>
             {notice && <p className="catalog-card__notice" role="status">{notice}</p>}
-            <button type="button" className="button catalog-card__buy" onClick={buy}>
-              COMPRAR <ArrowRight size={16} aria-hidden="true" />
+            <button type="button" className={`button catalog-card__buy${added ? " is-added" : ""}`} onClick={addToCart}>
+              {added ? <><Check size={16} aria-hidden="true" /> Adicionado</> : <><ShoppingBag size={16} aria-hidden="true" /> Adicionar ao carrinho</>}
             </button>
           </>
         ) : (

@@ -59,6 +59,7 @@ export async function getOrderAdmin(orderNumber: string) {
       include: {
         customer: { select: { email: true, phone: true } },
         events: { orderBy: { createdAt: "desc" }, take: 40 },
+        items: { orderBy: { createdAt: "asc" } },
       },
     });
     return order;

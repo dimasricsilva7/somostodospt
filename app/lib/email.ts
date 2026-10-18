@@ -83,7 +83,7 @@ export function renderPaid(p: { name: string; orderNumber: string; productName: 
   return base(
     "Pagamento confirmado! 🎉",
     `<p>Olá, ${p.name}. Recebemos o pagamento do seu pedido <strong>${p.orderNumber}</strong>.</p>
-     <p>${p.productName} · Tamanho ${p.size} · <strong>${brl(p.totalCents)}</strong></p>
+     <p>${p.productName}${p.size ? ` · Tamanho ${p.size}` : ""} · <strong>${brl(p.totalCents)}</strong></p>
      <p>Já estamos preparando o envio. A entrega é em <strong>2 a 3 dias úteis</strong>, com frete grátis.</p>
      <p>${button(p.url, "Acompanhar meu pedido")}</p>`
   );
@@ -92,7 +92,7 @@ export function renderPaid(p: { name: string; orderNumber: string; productName: 
 export function renderExpired(p: { name: string; orderNumber: string; productName: string; size: string; url: string }): string {
   return base(
     "Seu PIX expirou — mas dá pra retomar",
-    `<p>Olá, ${p.name}. O prazo do PIX do pedido <strong>${p.orderNumber}</strong> (${p.productName} · ${p.size}) terminou.</p>
+    `<p>Olá, ${p.name}. O prazo do PIX do pedido <strong>${p.orderNumber}</strong> (${p.productName}${p.size ? ` · ${p.size}` : ""}) terminou.</p>
      <p>Não se preocupe: você pode gerar um novo código PIX e concluir a compra em segundos.</p>
      <p>${button(p.url, "Gerar novo PIX")}</p>`
   );
@@ -101,7 +101,7 @@ export function renderExpired(p: { name: string; orderNumber: string; productNam
 export function renderPending(p: { name: string; orderNumber: string; productName: string; size: string; totalCents: number; url: string }): string {
   return base(
     "Seu pedido está aguardando pagamento",
-    `<p>Olá, ${p.name}. Seu pedido <strong>${p.orderNumber}</strong> (${p.productName} · ${p.size} · <strong>${brl(p.totalCents)}</strong>) está quase lá!</p>
+    `<p>Olá, ${p.name}. Seu pedido <strong>${p.orderNumber}</strong> (${p.productName}${p.size ? ` · ${p.size}` : ""} · <strong>${brl(p.totalCents)}</strong>) está quase lá!</p>
      <p>Pague com PIX para confirmar. Se o código tiver expirado, é só gerar um novo na página do pedido. Entrega em <strong>2 a 3 dias úteis</strong>, frete grátis.</p>
      <p>${button(p.url, "Pagar com PIX")}</p>`
   );

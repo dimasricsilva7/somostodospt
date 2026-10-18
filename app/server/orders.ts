@@ -10,11 +10,11 @@ import { computeTotals, formatOrderNumber, MIN_PIX_CENTS } from "@/app/lib/prici
 import { canTransition, isPaidStatus } from "@/app/lib/order-status";
 import { sendCapiEvent, fbcFromClickId, capiEnabled } from "@/app/lib/meta/capi";
 import { product } from "@/app/config/product";
-import { productPriceCents, sizeAvailable } from "@/app/config/catalog";
+import { productPriceCents, sizeAvailable, type CatalogProduct } from "@/app/config/catalog";
 import { sellableMerged } from "@/app/server/content";
 import { linkLeadToOrder } from "@/app/server/leads";
 import { emailOrderExpired, emailOrderPaid } from "@/app/server/emails";
-import { PIX_EXPIRATION_MINUTES, shippingCents } from "@/app/config/commerce";
+import { PIX_EXPIRATION_MINUTES, discountCentsFor, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
 
@@ -107,12 +107,20 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
     throw new CheckoutError("O pagamento via PIX está indisponível no momento. Tente novamente em alguns minutos.", 503);
   }
 
-  // Modelo escolhido: revalidado no servidor (ativo, com arte e preço). Nunca confiamos no navegador.
-  const model = await sellableMerged(input.productSlug);
-  if (!model) throw new CheckoutError("Este modelo não está disponível para compra no momento.", 409);
-  if (!sizeAvailable(model, input.size)) throw new CheckoutError("Este tamanho não está disponível para o modelo escolhido.", 409, { size: "Tamanho indisponível" });
-  const price = productPriceCents(model);
-  if (price === undefined) throw new CheckoutError("A loja ainda não ativou o preço deste modelo. A compra estará disponível em breve.", 503);
+  // Itens do carrinho: cada um revalidado no servidor (ativo, com arte, preço e tamanho). Nunca confiamos no navegador.
+  const merged = new Map<string, { model: CatalogProduct; size: string; quantity: number; unitPriceCents: number; listPriceCents: number | null }>();
+  for (const it of input.items) {
+    const model = await sellableMerged(it.productSlug);
+    if (!model) throw new CheckoutError("Um dos modelos do carrinho não está mais disponível. Revise o carrinho.", 409);
+    if (!sizeAvailable(model, it.size)) throw new CheckoutError(`O tamanho ${it.size} não está disponível para ${model.name}.`, 409, { size: "Tamanho indisponível" });
+    const price = productPriceCents(model);
+    if (price === undefined) throw new CheckoutError("Um dos modelos ainda não tem preço ativo. Revise o carrinho.", 503);
+    const key = `${model.slug}:${it.size}`;
+    const prev = merged.get(key);
+    const quantity = Math.min(5, Math.max(1, it.quantity) + (prev?.quantity ?? 0));
+    merged.set(key, { model, size: it.size, quantity, unitPriceCents: price, listPriceCents: typeof model.compareAtPriceInCents === "number" ? model.compareAtPriceInCents : null });
+  }
+  const lines = [...merged.values()];
 
   // Anti-abuso persistente (vale entre instâncias): impede gerar cobranças PIX em massa.
   if (isProductionDeploy()) {
@@ -127,11 +135,11 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
     }
   }
 
-  const quantity = Math.min(5, Math.max(1, input.quantity));
-  const unitPriceCents = price;
-  const listPriceCents = typeof model.compareAtPriceInCents === "number" ? model.compareAtPriceInCents : null;
-  const totals = computeTotals([{ unitPriceCents, quantity }], shippingCents());
+  const totalUnits = lines.reduce((s, l) => s + l.quantity, 0);
+  const subtotalRaw = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const totals = computeTotals(lines.map((l) => ({ unitPriceCents: l.unitPriceCents, quantity: l.quantity })), shippingCents(), discountCentsFor(subtotalRaw, totalUnits));
   if (totals.totalCents < MIN_PIX_CENTS) throw new CheckoutError("O valor mínimo para pagamento via PIX é R$ 5,00.");
+  const summary = lines.map((l) => `${l.quantity}× ${l.model.shortName || l.model.name} (${l.size})`).join(" · ");
 
   const attr = attributionFields(input.context);
   const shippingAddress = { cep: input.address.cep, street: input.address.street, number: input.address.number, complement: input.address.complement || null, district: input.address.district, city: input.address.city, state: input.address.state };
@@ -150,13 +158,14 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
           customerId: customer.id,
           customerSnapshot,
           shippingAddress,
-          productSlug: model.slug,
-          productName: model.name,
-          sku: model.sku,
-          size: input.size,
-          quantity,
-          unitPriceCents,
-          listPriceCents,
+          productSlug: lines[0].model.slug,
+          productName: summary.slice(0, 400),
+          sku: lines[0].model.sku,
+          size: lines.length === 1 ? lines[0].size : "vários",
+          quantity: totalUnits,
+          unitPriceCents: lines[0].unitPriceCents,
+          listPriceCents: lines[0].listPriceCents,
+          items: { create: lines.map((l) => ({ productSlug: l.model.slug, productName: l.model.name, sku: l.model.sku, size: l.size, quantity: l.quantity, unitPriceCents: l.unitPriceCents, listPriceCents: l.listPriceCents })) },
           ...totals,
           paymentProvider: "bravopay",
           status: "PENDING",
@@ -179,7 +188,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
     throw err;
   }
 
-  await logOrderEvent(order.id, "order_created", `Pedido ${order.orderNumber} criado`, { total: order.totalCents, size: order.size, quantity });
+  await logOrderEvent(order.id, "order_created", `Pedido ${order.orderNumber} criado`, { total: order.totalCents, itens: summary, unidades: totalUnits });
   log.info("checkout", "pedido criado", { order: order.orderNumber, total: order.totalCents });
   await linkLeadToOrder(input.checkoutToken, order.id); // tira o lead da lista de abandonados
 
@@ -206,7 +215,7 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
         fbc: order.fbc ?? fbcFromClickId(order.fbclid, order.createdAt),
         fbp: order.fbp,
       },
-      customData: { currency: "BRL", value: order.totalCents / 100, content_type: "product", content_ids: [model.sku], contents: [{ id: model.sku, quantity, item_price: unitPriceCents / 100 }], payment_type: "pix" },
+      customData: { currency: "BRL", value: order.totalCents / 100, content_type: "product", content_ids: lines.map((l) => l.model.sku), contents: lines.map((l) => ({ id: l.model.sku, quantity: l.quantity, item_price: l.unitPriceCents / 100 })), num_items: totalUnits, payment_type: "pix" },
     });
   }
   return { order: result, reused: false };
@@ -365,8 +374,18 @@ export async function applyPaymentSnapshot(
  * Venda confirmada (PIX pago): evento Meta Purchase (CAPI).
  * Protegido contra execução dupla por purchaseTrackedAt.
  */
+type MetaItem = { sku: string; quantity: number; unitPriceCents: number };
+function metaContents(order: MetaItem, items: MetaItem[]) {
+  const list = items.length ? items : [{ sku: order.sku, quantity: order.quantity, unitPriceCents: order.unitPriceCents }];
+  return {
+    content_ids: list.map((i) => i.sku),
+    contents: list.map((i) => ({ id: i.sku, quantity: i.quantity, item_price: i.unitPriceCents / 100 })),
+    num_items: list.reduce((s, i) => s + i.quantity, 0),
+  };
+}
+
 async function onConfirmed(orderId: string) {
-  const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { customer: true } });
+  const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { customer: true, items: true } });
   const tracked = await db.order.updateMany({ where: { id: order.id, purchaseTrackedAt: null }, data: { purchaseTrackedAt: new Date() } });
   if (!tracked.count) return;
 
@@ -399,9 +418,7 @@ async function onConfirmed(orderId: string) {
       value: value / 100,
       order_id: order.orderNumber,
       content_type: "product",
-      content_ids: [order.sku],
-      contents: [{ id: order.sku, quantity: order.quantity, item_price: order.unitPriceCents / 100 }],
-      num_items: order.quantity,
+      ...metaContents(order, order.items),
     },
   });
 }
@@ -515,7 +532,7 @@ export async function adminMarkPaid(orderId: string): Promise<{ ok: boolean; not
 /** Reenvia a conversão Purchase ao Meta (CAPI) para um pedido pago — recupera vendas antigas. */
 export async function resendMetaPurchase(orderId: string): Promise<{ sent: boolean; reason?: string }> {
   if (!capiEnabled()) return { sent: false, reason: "capi_off" };
-  const order = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { customer: true, items: true } });
   if (!order) return { sent: false, reason: "not_found" };
   if (order.status !== "PAID") return { sent: false, reason: "not_paid" };
 
@@ -545,9 +562,7 @@ export async function resendMetaPurchase(orderId: string): Promise<{ sent: boole
       value: value / 100,
       order_id: order.orderNumber,
       content_type: "product",
-      content_ids: [order.sku],
-      contents: [{ id: order.sku, quantity: order.quantity, item_price: order.unitPriceCents / 100 }],
-      num_items: order.quantity,
+      ...metaContents(order, order.items),
     },
   });
   await logOrderEvent(order.id, "meta_purchase_resent", "Conversão Purchase reenviada ao Meta (CAPI, recuperação)");

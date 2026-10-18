@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { getProduct, productPriceCents } from "@/app/config/catalog";
-import { getTexts, sellableMerged } from "@/app/server/content";
-import { BrandMark } from "@/app/components/BrandMark";
+import { mergedCatalog, getTexts } from "@/app/server/content";
+import { productPriceCents } from "@/app/config/catalog";
 import { CheckoutClient } from "./CheckoutClient";
 
 export const dynamic = "force-dynamic";
@@ -14,41 +12,22 @@ export const metadata: Metadata = {
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ produto?: string; tam?: string }> }) {
   const { produto, tam } = await searchParams;
-  const model = await sellableMerged(produto);
+  const [catalog, texts] = await Promise.all([mergedCatalog(), getTexts()]);
 
-  if (!model) {
-    const exists = getProduct(produto);
-    const message = exists
-      ? "Este modelo ainda não está disponível para compra. Volte em breve."
-      : "Escolha um dos modelos disponíveis na página inicial para continuar.";
-    return (
-      <main className="checkout-shell checkout-shell--notice">
-        <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
-        <div className="checkout-empty">
-          <h1>Compra indisponível</h1>
-          <p>{message}</p>
-          <Link href="/" className="button button--outline">Ver os modelos</Link>
-        </div>
-      </main>
-    );
-  }
-
-  const requested = tam?.toUpperCase();
-  const initialSize = requested && model.sizes.includes(requested) ? requested : undefined;
-  const texts = await getTexts();
+  const products = catalog
+    .map((p) => {
+      const price = productPriceCents(p);
+      if (!p.active || p.media.length === 0 || price === undefined) return null;
+      return { slug: p.slug, name: p.name, priceInCents: price, compareAtPriceInCents: p.compareAtPriceInCents, sizes: p.sizes, media: p.media[0] };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 
   return (
     <CheckoutClient
-      model={{
-        slug: model.slug,
-        name: model.name,
-        priceInCents: productPriceCents(model)!,
-        compareAtPriceInCents: model.compareAtPriceInCents,
-        sizes: model.sizes,
-        media: model.media[0],
-      }}
-      initialSize={initialSize}
+      products={products}
       processorName={texts.paymentProcessorName}
+      initialSlug={produto}
+      initialSize={tam?.toUpperCase()}
     />
   );
 }

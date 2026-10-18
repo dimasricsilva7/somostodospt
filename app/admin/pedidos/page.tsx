@@ -42,7 +42,7 @@ export default async function AdminOrdersPage() {
                   <td><Link href={`/admin/pedidos/${o.orderNumber}`} className="admin-link">{o.orderNumber}</Link></td>
                   <td>{new Date(o.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                   <td>{o.customerName}</td>
-                  <td>{o.quantity}x {o.productName} · {o.size}</td>
+                  <td>{o.productName}{o.size && o.size !== "vários" && !o.productName.includes("×") ? ` · ${o.size}` : ""}</td>
                   <td>{formatPrice(o.totalCents)}</td>
                   <td><span className={`admin-tag ${statusClass(o.status)}`}>{ORDER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}</span></td>
                   <td>{FULFILL[o.fulfillmentStatus] ?? o.fulfillmentStatus}</td>

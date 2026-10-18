@@ -17,7 +17,7 @@ export async function emailOrderPaid(orderId: string): Promise<void> {
   const ok = await sendMail(
     order.customer.email,
     `Pagamento confirmado — pedido ${order.orderNumber}`,
-    renderPaid({ name: firstName(order.customer.name), orderNumber: order.orderNumber!, productName: order.productName, size: order.size, totalCents: order.totalCents, url })
+    renderPaid({ name: firstName(order.customer.name), orderNumber: order.orderNumber!, productName: order.productName, size: order.productName.includes("×") ? "" : order.size, totalCents: order.totalCents, url })
   );
   if (!ok) await db.order.updateMany({ where: { id: orderId }, data: { emailPaidAt: null } }); // libera p/ tentar de novo
   else log.info("email", "compra aprovada enviada", { order: order.orderNumber });
@@ -34,7 +34,7 @@ export async function emailOrderExpired(orderId: string): Promise<void> {
   const ok = await sendMail(
     order.customer.email,
     `Seu PIX expirou — pedido ${order.orderNumber}`,
-    renderExpired({ name: firstName(order.customer.name), orderNumber: order.orderNumber!, productName: order.productName, size: order.size, url })
+    renderExpired({ name: firstName(order.customer.name), orderNumber: order.orderNumber!, productName: order.productName, size: order.productName.includes("×") ? "" : order.size, url })
   );
   if (!ok) await db.order.updateMany({ where: { id: orderId }, data: { emailExpiredAt: null } });
   else log.info("email", "pix expirado enviado", { order: order.orderNumber });
@@ -52,13 +52,13 @@ export async function resendOrderEmail(orderId: string): Promise<{ sent: boolean
   let html: string;
   if (order.status === "PAID") {
     subject = `Pagamento confirmado — pedido ${order.orderNumber}`;
-    html = renderPaid({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, totalCents: order.totalCents, url });
+    html = renderPaid({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.productName.includes("×") ? "" : order.size, totalCents: order.totalCents, url });
   } else if (order.status === "EXPIRED") {
     subject = `Seu PIX expirou — pedido ${order.orderNumber}`;
-    html = renderExpired({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, url });
+    html = renderExpired({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.productName.includes("×") ? "" : order.size, url });
   } else {
     subject = `Seu pedido ${order.orderNumber} está aguardando pagamento`;
-    html = renderPending({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.size, totalCents: order.totalCents, url });
+    html = renderPending({ name, orderNumber: order.orderNumber!, productName: order.productName, size: order.productName.includes("×") ? "" : order.size, totalCents: order.totalCents, url });
   }
   const sent = await sendMail(order.customer.email, subject, html);
   return { sent, reason: sent ? undefined : "send_failed" };

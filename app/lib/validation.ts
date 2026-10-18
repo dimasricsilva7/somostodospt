@@ -66,11 +66,17 @@ export const checkoutSchema = z.object({
   /** Anti-robô: campo isca (sempre vazio para pessoas) e tempo desde que o formulário abriu */
   hp: z.string().max(200).optional(),
   elapsedMs: z.number().int().min(0).max(864_000_000).optional(),
-  /** Modelo escolhido (slug do catálogo). O servidor revalida produto, preço e disponibilidade. */
-  productSlug: z.string().trim().min(1).max(80).regex(/^[a-z0-9-]+$/),
-  /** Tamanho da camiseta escolhido — precisa estar entre os tamanhos habilitados. */
-  size: z.string().trim().toUpperCase().refine((v) => ALLOWED_SIZES.includes(v), "Escolha um tamanho válido"),
-  quantity: z.number().int().min(1).max(MAX_QUANTITY).default(1),
+  /** Itens do carrinho. O servidor revalida produto, preço e disponibilidade de cada um. */
+  items: z
+    .array(
+      z.object({
+        productSlug: z.string().trim().min(1).max(80).regex(/^[a-z0-9-]+$/),
+        size: z.string().trim().toUpperCase().refine((v) => ALLOWED_SIZES.includes(v), "Escolha um tamanho válido"),
+        quantity: z.number().int().min(1).max(MAX_QUANTITY).default(1),
+      })
+    )
+    .min(1, "Seu carrinho está vazio")
+    .max(10),
   customer: customerSchema,
   address: addressSchema,
   marketingConsent: z.boolean().default(false),

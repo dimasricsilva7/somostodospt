@@ -36,8 +36,16 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ n
       <div className="admin-order-grid">
         <section className="admin-box">
           <h2 className="admin-h2">Resumo</h2>
-          <p><strong>{order.quantity}x {order.productName}</strong> · Tamanho {order.size}</p>
-          <p>Total: <strong>{formatPrice(order.totalCents)}</strong> · Pagamento: {ORDER_STATUS_LABEL[order.status] ?? order.status}</p>
+          {order.items.length > 0 ? (
+            <ul className="admin-items">
+              {order.items.map((it) => (
+                <li key={it.id}><strong>{it.quantity}×</strong> {it.productName} · Tam {it.size} · {formatPrice(it.unitPriceCents * it.quantity)}</li>
+              ))}
+            </ul>
+          ) : (
+            <p><strong>{order.quantity}x {order.productName}</strong>{order.size ? ` · Tamanho ${order.size}` : ""}</p>
+          )}
+          <p>{order.discountCents > 0 ? <>Subtotal {formatPrice(order.subtotalCents)} · Desconto -{formatPrice(order.discountCents)} · </> : null}Total: <strong>{formatPrice(order.totalCents)}</strong> · Pagamento: {ORDER_STATUS_LABEL[order.status] ?? order.status}</p>
           <p className="admin-muted">Criado em {order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}{order.paidAt ? ` · Pago em ${order.paidAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}</p>
           <ResendEmailButton orderNumber={order.orderNumber!} />
           <PaymentActions orderNumber={order.orderNumber!} status={order.status} />

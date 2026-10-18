@@ -136,11 +136,29 @@ model Order {
 
   payments          Payment[]
   events            PaymentEvent[]
+  items             OrderItem[]
 
   @@index([status, createdAt])
   @@index([createdAt])
   @@index([customerId])
   @@index([paidAt])
+}
+
+/// Itens do pedido (carrinho) — um pedido pode ter várias camisetas/tamanhos.
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productSlug    String
+  productName    String
+  sku            String
+  size           String
+  quantity       Int      @default(1)
+  unitPriceCents Int
+  listPriceCents Int?
+  createdAt      DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model Payment {

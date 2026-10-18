@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Loader2, Lock, Minus, Plus, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
@@ -9,32 +9,22 @@ import { Heartbeat } from "@/app/components/Heartbeat";
 import { BrandMark } from "@/app/components/BrandMark";
 import { ProductMedia } from "@/app/components/ProductMedia";
 import { formatPrice, type ProductMedia as ProductMediaType } from "@/app/config/product";
-import { MAX_QUANTITY, shipping, shippingCents } from "@/app/config/commerce";
-import { computeTotals } from "@/app/lib/pricing";
+import { MAX_QUANTITY, discountCentsFor, multiBuyDiscount, shipping } from "@/app/config/commerce";
 import { maskCep, maskCpf, maskPhone, onlyDigits } from "@/app/lib/validators";
 import { buildClientContext, getConsentChoice, newEventId, track } from "@/app/lib/tracking";
+import { addItem, clearCart, removeItem, updateQty, useCart } from "@/app/lib/cart";
 
-type CheckoutModel = {
-  slug: string;
-  name: string;
-  priceInCents: number;
-  compareAtPriceInCents?: number;
-  sizes: string[];
-  media: ProductMediaType;
-};
-
+type CheckoutProduct = { slug: string; name: string; priceInCents: number; compareAtPriceInCents?: number; sizes: string[]; media: ProductMediaType };
 type Fields = Record<string, string>;
 
 const CURRENCY = "BRL";
 const money = (c: number) => formatPrice(c) ?? "—";
 
-export function CheckoutClient({ model, initialSize, processorName }: { model: CheckoutModel; initialSize?: string; processorName?: string }) {
+export function CheckoutClient({ products, processorName, initialSlug, initialSize }: { products: CheckoutProduct[]; processorName?: string; initialSlug?: string; initialSize?: string }) {
   const router = useRouter();
-  const sizes = model.sizes;
-  const unitPrice = model.priceInCents;
+  const cart = useCart();
+  const bySlug = new Map(products.map((p) => [p.slug, p]));
 
-  const [size, setSize] = useState<string>(initialSize ?? "");
-  const [quantity, setQuantity] = useState(1);
   const [form, setForm] = useState({ name: "", email: "", phone: "", cpf: "", cep: "", street: "", number: "", complement: "", district: "", city: "", state: "" });
   const [hp, setHp] = useState("");
   const [consent, setConsent] = useState(false);
@@ -43,13 +33,36 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
   const [submitting, setSubmitting] = useState(false);
   const startedAt = useRef(0);
   const checkoutToken = useRef("");
+  const didInit = useRef(false);
 
-  const totals = computeTotals([{ unitPriceCents: unitPrice, quantity }], shippingCents());
+  const lines = cart
+    .map((i) => {
+      const p = bySlug.get(i.slug);
+      if (!p || !p.sizes.includes(i.size)) return null;
+      return { slug: i.slug, size: i.size, qty: i.qty, name: p.name, price: p.priceInCents, media: p.media };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const count = lines.reduce((s, l) => s + l.qty, 0);
+  const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
+  const discount = discountCentsFor(subtotal, count);
+  const shippingCents = shipping.mode === "flat" ? shipping.cents : 0;
+  const total = subtotal - discount + shippingCents;
+  const faltaPromo = multiBuyDiscount.enabled && count === multiBuyDiscount.minUnits - 1;
 
   useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
     startedAt.current = Date.now();
     checkoutToken.current = newEventId().replace(/-/g, "").slice(0, 32).padEnd(16, "0");
-    track("InitiateCheckout", { content_name: model.name, value: totals.totalCents / 100, currency: CURRENCY }, { eventId: newEventId(), once: true });
+    // Deep-link opcional: /checkout?produto=slug&tam=M adiciona ao carrinho
+    if (initialSlug && initialSize) {
+      const p = bySlug.get(initialSlug);
+      if (p && p.sizes.includes(initialSize) && !cart.some((i) => i.slug === initialSlug && i.size === initialSize)) {
+        addItem(initialSlug, initialSize, 1);
+      }
+    }
+    track("InitiateCheckout", { currency: CURRENCY, num_items: count }, { eventId: newEventId(), once: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -65,21 +78,13 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
   }
 
   function postLead() {
-    if ((!form.email && !form.phone) || !checkoutToken.current) return;
+    if ((!form.email && !form.phone) || !checkoutToken.current || lines.length === 0) return;
+    const first = lines[0];
     fetch("/api/checkout/lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
-      body: JSON.stringify({
-        clientKey: checkoutToken.current,
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        productSlug: model.slug,
-        productName: model.name,
-        size,
-        totalCents: totals.totalCents,
-      }),
+      body: JSON.stringify({ clientKey: checkoutToken.current, name: form.name, email: form.email, phone: form.phone, productSlug: first.slug, productName: count > 1 ? `${count} camisetas` : first.name, size: first.size, totalCents: total }),
     }).catch(() => {});
   }
 
@@ -90,23 +95,17 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       const data = (await res.json()) as { logradouro?: string; bairro?: string; localidade?: string; uf?: string; erro?: boolean };
       if (data.erro) return;
-      setForm((f) => ({
-        ...f,
-        street: f.street || data.logradouro || "",
-        district: f.district || data.bairro || "",
-        city: data.localidade || f.city,
-        state: data.uf || f.state,
-      }));
+      setForm((f) => ({ ...f, street: f.street || data.logradouro || "", district: f.district || data.bairro || "", city: data.localidade || f.city, state: data.uf || f.state }));
     } catch {
-      /* preenchimento manual */
+      /* manual */
     }
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(undefined);
-    if (!size) {
-      setErrors((x) => ({ ...x, size: "Escolha um tamanho" }));
+    if (lines.length === 0) {
+      setError("Seu carrinho está vazio.");
       return;
     }
     if (submitting) return;
@@ -114,7 +113,7 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
 
     const adsConsent = getConsentChoice() !== "rejected";
     const paymentEventId = newEventId();
-    track("AddPaymentInfo", { value: totals.totalCents / 100, currency: CURRENCY, content_name: model.name }, { eventId: paymentEventId });
+    track("AddPaymentInfo", { value: total / 100, currency: CURRENCY, num_items: count }, { eventId: paymentEventId });
 
     try {
       const res = await fetch("/api/checkout", {
@@ -124,9 +123,7 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
           checkoutToken: checkoutToken.current,
           hp,
           elapsedMs: Date.now() - startedAt.current,
-          productSlug: model.slug,
-          size,
-          quantity,
+          items: lines.map((l) => ({ productSlug: l.slug, size: l.size, quantity: l.qty })),
           customer: { name: form.name, email: form.email, phone: form.phone, cpf: form.cpf },
           address: { cep: form.cep, street: form.street, number: form.number, complement: form.complement, district: form.district, city: form.city, state: form.state },
           marketingConsent: consent,
@@ -142,6 +139,7 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
         return;
       }
       if (data.orderNumber && data.token) {
+        clearCart();
         router.push(`/pedido/${encodeURIComponent(data.orderNumber)}?t=${encodeURIComponent(data.token)}`);
         return;
       }
@@ -155,6 +153,24 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
 
   const err = (k: string) => errors[k];
 
+  if (lines.length === 0) {
+    return (
+      <div className="checkout-shell">
+        <Heartbeat />
+        <AnnounceBar />
+        <header className="checkout-top">
+          <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
+          <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>
+        </header>
+        <div className="checkout-empty">
+          <h1>Seu carrinho está vazio</h1>
+          <p>Escolha um ou mais modelos na página inicial para finalizar a compra.</p>
+          <Link href="/" className="button button--outline">Ver a coleção</Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="checkout-shell">
       <Heartbeat />
@@ -166,28 +182,8 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
 
       <div className="checkout-grid">
         <form className="checkout-form" onSubmit={submit} noValidate>
-          <Link href="/" className="text-link checkout-back"><ArrowLeft size={15} aria-hidden="true" /> Trocar de modelo</Link>
+          <Link href="/" className="text-link checkout-back"><ArrowLeft size={15} aria-hidden="true" /> Continuar comprando</Link>
           <h1>Finalizar compra</h1>
-
-          <fieldset className="field-group">
-            <legend>Tamanho</legend>
-            <div className="size-selector__controls">
-              {sizes.map((s) => (
-                <button key={s} type="button" className={`size-button${size === s ? " is-selected" : ""}`} onClick={() => { setSize(s); setErrors((e) => { const n = { ...e }; delete n.size; return n; }); }} aria-pressed={size === s}>
-                  {s}
-                </button>
-              ))}
-            </div>
-            {err("size") && <p className="field__error">{err("size")}</p>}
-            <div className="qty-row">
-              <span>Quantidade</span>
-              <div className="qty-stepper">
-                <button type="button" aria-label="Diminuir" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1}><Minus size={16} /></button>
-                <strong aria-live="polite">{quantity}</strong>
-                <button type="button" aria-label="Aumentar" onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))} disabled={quantity >= MAX_QUANTITY}><Plus size={16} /></button>
-              </div>
-            </div>
-          </fieldset>
 
           <fieldset className="field-group">
             <legend>Seus dados</legend>
@@ -236,7 +232,6 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
             </div>
           </fieldset>
 
-          {/* honeypot anti-robô (invisível para pessoas) */}
           <div aria-hidden="true" className="hp-field">
             <label>Não preencha<input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} /></label>
           </div>
@@ -256,24 +251,40 @@ export function CheckoutClient({ model, initialSize, processorName }: { model: C
           {error && <p className="checkout-error" role="alert">{error}</p>}
 
           <button type="submit" className="button button--large pay-button" disabled={submitting}>
-            {submitting ? <><Loader2 size={18} className="spin" aria-hidden="true" /> GERANDO PIX…</> : <>PAGAR {money(totals.totalCents)} COM PIX</>}
+            {submitting ? <><Loader2 size={18} className="spin" aria-hidden="true" /> GERANDO PIX…</> : <>PAGAR {money(total)} COM PIX</>}
           </button>
           <p className="secure-note"><ShieldCheck size={14} aria-hidden="true" /> Seus dados são usados apenas para o pedido e a entrega. O pagamento é processado por PIX.</p>
         </form>
 
         <aside className="checkout-summary" aria-label="Resumo do pedido">
-          <div className="summary-product">
-            <div className="summary-product__media"><ProductMedia asset={model.media} sizes="90px" /></div>
-            <div>
-              <strong>{model.name}</strong>
-              <span>Tamanho: {size || "a escolher"}</span>
-              <span>Quantidade: {quantity}</span>
-            </div>
+          <strong className="summary-title">Resumo do pedido</strong>
+          <div className="summary-cart">
+            {lines.map((l) => (
+              <div className="summary-cart__item" key={`${l.slug}:${l.size}`}>
+                <div className="summary-cart__media"><ProductMedia asset={l.media} sizes="56px" /></div>
+                <div className="summary-cart__info">
+                  <strong>{l.name}</strong>
+                  <span>Tam {l.size}</span>
+                  <div className="cart-item__qty">
+                    <button type="button" aria-label="Diminuir" onClick={() => updateQty(l.slug, l.size, l.qty - 1)}><Minus size={13} /></button>
+                    <span>{l.qty}</span>
+                    <button type="button" aria-label="Aumentar" onClick={() => updateQty(l.slug, l.size, Math.min(MAX_QUANTITY, l.qty + 1))}><Plus size={13} /></button>
+                    <button type="button" className="cart-item__remove" aria-label="Remover" onClick={() => removeItem(l.slug, l.size)}><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <strong className="summary-cart__total">{money(l.price * l.qty)}</strong>
+              </div>
+            ))}
           </div>
+
+          {faltaPromo && <p className="cart-promo-hint">🎯 Adicione mais 1 camiseta e <strong>ganhe {multiBuyDiscount.percent}% OFF</strong>!</p>}
+          {discount > 0 && <p className="cart-promo-hint cart-promo-hint--on">🎉 {multiBuyDiscount.percent}% de desconto aplicado!</p>}
+
           <dl className="summary-rows">
-            <div><dt>Subtotal</dt><dd>{money(totals.subtotalCents)}</dd></div>
-            <div><dt>Frete</dt><dd>{shipping.mode === "free" ? "Grátis" : money(totals.shippingCents)}</dd></div>
-            <div className="summary-total"><dt>Total</dt><dd>{money(totals.totalCents)}</dd></div>
+            <div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div>
+            {discount > 0 && <div className="cart-totals__disc"><dt>Desconto</dt><dd>-{money(discount)}</dd></div>}
+            <div><dt>Frete</dt><dd>{shipping.mode === "free" ? "Grátis" : money(shippingCents)}</dd></div>
+            <div className="summary-total"><dt>Total</dt><dd>{money(total)}</dd></div>
           </dl>
           <p className="summary-note">{shipping.mode === "free" ? shipping.label : ""}</p>
         </aside>

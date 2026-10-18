@@ -26,10 +26,23 @@ export const shipping = {
   etaText: "Entrega em 2 a 3 dias úteis", // prazo informado pelo responsável (2026-10-16)
 } as const;
 
+/** Desconto progressivo: X% ao levar `minUnits` ou mais camisetas (total do carrinho). */
+export const multiBuyDiscount = {
+  enabled: true,
+  minUnits: 2,
+  percent: 20,
+} as const;
+
+/** Desconto em centavos para um subtotal + quantidade total de itens. */
+export function discountCentsFor(subtotalCents: number, totalUnits: number): number {
+  if (!multiBuyDiscount.enabled || totalUnits < multiBuyDiscount.minUnits) return 0;
+  return Math.round(subtotalCents * (multiBuyDiscount.percent / 100));
+}
+
 /** Barra de aviso no topo do site e do checkout (condições comerciais reais). */
 export const announcement = {
   enabled: true,
-  text: "FRETE GRÁTIS para todo o Brasil • Entrega em 2 a 3 dias úteis",
+  text: "LEVE 2 CAMISETAS E GANHE 20% OFF • FRETE GRÁTIS • Entrega em 2 a 3 dias úteis",
 } as const;
 
 /** Modal de aviso de entrega — abre após `delaySeconds` na landing (1x por sessão). */
