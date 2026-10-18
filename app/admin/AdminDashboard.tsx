@@ -243,6 +243,8 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
       )}
 
       {tab === "modelos" && (
+        <>
+        <div className="admin-toolbar"><Link href="/admin/produtos/novo" className="button button--small">+ Adicionar modelo</Link></div>
         <div className="admin-products">
           {products.map((p) => {
             const price = productPriceCents(p);
@@ -264,6 +266,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
             );
           })}
         </div>
+        </>
       )}
     </>
   );

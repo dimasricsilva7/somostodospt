@@ -224,6 +224,22 @@ model ProductContent {
   updatedAt           DateTime @updatedAt
 }
 
+/// Modelos criados pelo admin (além dos fixos do código). Mesclados ao catálogo.
+model CustomProduct {
+  slug                String   @id
+  name                String
+  description         String?
+  priceCents          Int?
+  compareAtPriceCents Int?
+  sizes               Json?
+  active              Boolean  @default(false)
+  mainImageId         String?
+  galleryIds          Json?
+  sortOrder           Int      @default(100)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
 /// Textos editáveis da loja (hero, títulos, etc.) — chave → valor JSON.
 model SiteContent {
   key       String   @id

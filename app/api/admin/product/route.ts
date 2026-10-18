@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAuthed } from "@/app/lib/auth";
 import { isSameOrigin } from "@/app/lib/request";
-import { getProduct } from "@/app/config/catalog";
-import { saveProductContent, type ProductEdit } from "@/app/server/content";
+import { getCustomProduct, isConfigSlug, saveCustomProduct, saveProductContent, type ProductEdit } from "@/app/server/content";
 import { log } from "@/app/lib/log";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +13,9 @@ export async function POST(req: NextRequest) {
   if (!(await isAuthed())) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as (ProductEdit & { slug?: string }) | null;
-  if (!body?.slug || !getProduct(body.slug)) return NextResponse.json({ error: "Modelo inválido." }, { status: 400 });
+  if (!body?.slug) return NextResponse.json({ error: "Modelo inválido." }, { status: 400 });
+  const custom = isConfigSlug(body.slug) ? null : await getCustomProduct(body.slug);
+  if (!isConfigSlug(body.slug) && !custom) return NextResponse.json({ error: "Modelo inválido." }, { status: 400 });
 
   const edit: ProductEdit = {
     name: typeof body.name === "string" ? body.name.trim().slice(0, 160) || undefined : undefined,
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    await saveProductContent(body.slug, edit);
+    if (custom) await saveCustomProduct(body.slug, edit);
+    else await saveProductContent(body.slug, edit);
     return NextResponse.json({ ok: true });
   } catch (err) {
     log.error("admin", "falha ao salvar produto", { slug: body.slug, error: err instanceof Error ? err.message : String(err) });

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAuthed } from "@/app/lib/auth";
-import { getProduct, productPriceCents, ALL_SIZES } from "@/app/config/catalog";
-import { getProductOverride, mergedProduct } from "@/app/server/content";
+import { productPriceCents, ALL_SIZES } from "@/app/config/catalog";
+import { getCustomProduct, getProductOverride, mergedProduct } from "@/app/server/content";
 import { ProductEditor } from "./ProductEditor";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +10,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminProductPage({ params }: { params: Promise<{ slug: string }> }) {
   if (!(await isAuthed())) redirect("/admin/login");
   const { slug } = await params;
-  if (!getProduct(slug)) redirect("/admin");
 
-  const [merged, override] = await Promise.all([mergedProduct(slug), getProductOverride(slug)]);
-  const p = merged!;
+  const [merged, override, custom] = await Promise.all([mergedProduct(slug), getProductOverride(slug), getCustomProduct(slug)]);
+  if (!merged) redirect("/admin");
+  const p = merged;
   const price = productPriceCents(p);
 
   return (
@@ -32,7 +32,7 @@ export default async function AdminProductPage({ params }: { params: Promise<{ s
           compareReais: p.compareAtPriceInCents ? (p.compareAtPriceInCents / 100).toFixed(2) : "",
           sizes: p.sizes,
           active: p.active,
-          mainImageId: override?.mainImageId ?? null,
+          mainImageId: override?.mainImageId ?? custom?.mainImageId ?? null,
           currentImage: p.media[0]?.src ?? null,
         }}
       />

@@ -67,16 +67,37 @@ function applyOverride(base: CatalogProduct, o: Awaited<ReturnType<typeof db.pro
   };
 }
 
+/** Converte um modelo criado no admin (CustomProduct) para o formato do catálogo. */
+function customToCatalog(c: Awaited<ReturnType<typeof db.customProduct.findMany>>[number]): CatalogProduct {
+  const name = c.name;
+  let media: ProductMedia[] = [];
+  if (c.mainImageId) {
+    const gallery = (Array.isArray(c.galleryIds) ? (c.galleryIds as string[]) : []).map((id, i) => ({ id: `db-${i}`, label: name, alt: name, src: `/media/${id}`, aspect: "square" as const }));
+    media = [{ id: "db-main", label: name, alt: name, src: `/media/${c.mainImageId}`, aspect: "square" as const }, ...gallery];
+  }
+  return {
+    slug: c.slug,
+    name,
+    shortName: name,
+    sku: `CUSTOM-${c.slug.toUpperCase().replace(/[^A-Z0-9]/g, "-").slice(0, 40)}`,
+    description: c.description ?? "",
+    priceInCents: c.priceCents ?? undefined,
+    compareAtPriceInCents: c.compareAtPriceCents ?? undefined,
+    sizes: Array.isArray(c.sizes) ? (c.sizes as string[]) : [],
+    media,
+    active: c.active,
+  };
+}
+
 export async function mergedCatalog(): Promise<CatalogProduct[]> {
   try {
-    const overrides = await db.productContent.findMany();
+    const [overrides, customs] = await Promise.all([db.productContent.findMany(), db.customProduct.findMany()]);
     const map = new Map(overrides.map((o) => [o.slug, o]));
-    const merged = catalog.map((p) => applyOverride(p, map.get(p.slug)));
-    return merged.sort((a, b) => {
-      const sa = map.get(a.slug)?.sortOrder ?? 0;
-      const sb = map.get(b.slug)?.sortOrder ?? 0;
-      return sa - sb;
-    });
+    const entries = [
+      ...catalog.map((p) => ({ product: applyOverride(p, map.get(p.slug)), sort: map.get(p.slug)?.sortOrder ?? 0 })),
+      ...customs.map((c) => ({ product: customToCatalog(c), sort: c.sortOrder ?? 100 })),
+    ];
+    return entries.sort((a, b) => a.sort - b.sort).map((e) => e.product);
   } catch (err) {
     log.error("content", "falha ao mesclar catálogo; usando padrão do código", { error: err instanceof Error ? err.message : String(err) });
     return catalog;
@@ -86,13 +107,79 @@ export async function mergedCatalog(): Promise<CatalogProduct[]> {
 export async function mergedProduct(slug: string | null | undefined): Promise<CatalogProduct | undefined> {
   if (!slug) return undefined;
   const base = catalog.find((p) => p.slug === slug);
-  if (!base) return undefined;
-  try {
-    const o = await db.productContent.findUnique({ where: { slug } });
-    return applyOverride(base, o ?? undefined);
-  } catch {
-    return base;
+  if (base) {
+    try {
+      const o = await db.productContent.findUnique({ where: { slug } });
+      return applyOverride(base, o ?? undefined);
+    } catch {
+      return base;
+    }
   }
+  try {
+    const c = await db.customProduct.findUnique({ where: { slug } });
+    return c ? customToCatalog(c) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// ───────────────────────── Modelos personalizados (admin) ─────────────────────────
+
+export async function getCustomProduct(slug: string) {
+  try {
+    return await db.customProduct.findUnique({ where: { slug } });
+  } catch {
+    return null;
+  }
+}
+
+/** true se o slug é um modelo criado no admin (não existe no código). */
+export function isConfigSlug(slug: string): boolean {
+  return catalog.some((p) => p.slug === slug);
+}
+
+function slugify(name: string): string {
+  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+}
+
+export async function createCustomProduct(name: string, edit: ProductEdit): Promise<{ slug: string }> {
+  const base = slugify(name) || `modelo-${Date.now().toString(36)}`;
+  let slug = base;
+  let n = 1;
+  // Evita colisão com slugs do código e de outros custom
+  while (isConfigSlug(slug) || (await db.customProduct.findUnique({ where: { slug } }).catch(() => null))) {
+    slug = `${base}-${++n}`;
+  }
+  await db.customProduct.create({
+    data: {
+      slug,
+      name: name.slice(0, 160),
+      description: edit.description ?? null,
+      priceCents: edit.priceCents ?? null,
+      compareAtPriceCents: edit.compareAtPriceCents ?? null,
+      sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
+      active: edit.active ?? false,
+      mainImageId: edit.mainImageId ?? null,
+      galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
+    },
+  });
+  return { slug };
+}
+
+export async function saveCustomProduct(slug: string, edit: ProductEdit & { name?: string }): Promise<void> {
+  await db.customProduct.update({
+    where: { slug },
+    data: {
+      ...(edit.name ? { name: edit.name.slice(0, 160) } : {}),
+      description: edit.description ?? null,
+      priceCents: edit.priceCents ?? null,
+      compareAtPriceCents: edit.compareAtPriceCents ?? null,
+      sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
+      active: edit.active ?? false,
+      mainImageId: edit.mainImageId ?? null,
+      galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
+    },
+  });
 }
 
 /** Produto vendável mesclado: ativo, com arte e preço. Usado pelo checkout/servidor. */
