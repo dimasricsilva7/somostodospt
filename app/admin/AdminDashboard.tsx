@@ -34,7 +34,7 @@ const PAGE: Record<string, string> = { "/": "Página inicial", "/checkout": "Che
 function pageName(path: string | null) {
   if (!path) return "—";
   if (PAGE[path]) return PAGE[path];
-  if (path.startsWith("/pedido")) return "Pedido (PIX)";
+  if (path.startsWith("/pedido")) return "Tela do pedido";
   if (path.startsWith("/checkout")) return "Checkout";
   return path;
 }
