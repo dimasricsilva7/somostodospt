@@ -52,6 +52,8 @@ export async function listOrders(opts: { limit?: number; since?: Date; until?: D
   }
 }
 
+export type LinkedOrder = { orderNumber: string | null; productName: string; totalCents: number; status: string };
+
 export async function getOrderAdmin(orderNumber: string) {
   try {
     const order = await db.order.findUnique({
@@ -62,7 +64,24 @@ export async function getOrderAdmin(orderNumber: string) {
         items: { orderBy: { createdAt: "asc" } },
       },
     });
-    return order;
+    if (!order) return null;
+
+    // Pedidos vinculados por upsell (um upsell aceito gera um pedido filho).
+    const [children, parent] = await Promise.all([
+      db.order.findMany({
+        where: { parentOrderId: order.id },
+        orderBy: { createdAt: "asc" },
+        select: { orderNumber: true, productName: true, totalCents: true, status: true },
+      }),
+      order.parentOrderId
+        ? db.order.findUnique({ where: { id: order.parentOrderId }, select: { orderNumber: true, productName: true, totalCents: true, status: true } })
+        : Promise.resolve(null),
+    ]);
+
+    return Object.assign(order, {
+      upsellChildren: children as LinkedOrder[],
+      parentOrder: (parent ?? null) as LinkedOrder | null,
+    });
   } catch {
     return null;
   }

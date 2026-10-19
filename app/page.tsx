@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AnalyticsBootstrap } from "@/app/components/AnalyticsBootstrap";
 import { StorefrontExperience } from "@/app/components/StorefrontExperience";
 import { getSiteUrl, siteConfig } from "@/app/config/site";
-import { mergedCatalog, getTexts } from "@/app/server/content";
+import { mergedCatalog, getTexts, getSectionImages } from "@/app/server/content";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +23,11 @@ export function generateMetadata(): Metadata {
 }
 
 export default async function Home() {
-  const [products, texts] = await Promise.all([mergedCatalog(), getTexts()]);
+  const [products, texts, sectionImages] = await Promise.all([mergedCatalog(), getTexts(), getSectionImages()]);
   return (
     <>
       <AnalyticsBootstrap />
-      <StorefrontExperience products={products} texts={texts} />
+      <StorefrontExperience products={products} texts={texts} sectionImages={sectionImages} />
     </>
   );
 }

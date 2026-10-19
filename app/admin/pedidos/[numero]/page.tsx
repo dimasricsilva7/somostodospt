@@ -38,12 +38,37 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ n
           <h2 className="admin-h2">Resumo</h2>
           {order.items.length > 0 ? (
             <ul className="admin-items">
-              {order.items.map((it) => (
-                <li key={it.id}><strong>{it.quantity}×</strong> {it.productName} · Tam {it.size} · {formatPrice(it.unitPriceCents * it.quantity)}</li>
-              ))}
+              {order.items.map((it) => {
+                const isBump = it.productSlug?.startsWith("bump-");
+                return (
+                  <li key={it.id}>
+                    <strong>{it.quantity}×</strong> {it.productName}{it.size && it.size !== "-" ? ` · Tam ${it.size}` : ""} · {formatPrice(it.unitPriceCents * it.quantity)}
+                    {isBump && <span className="admin-tag admin-tag--bump">order bump</span>}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p><strong>{order.quantity}x {order.productName}</strong>{order.size ? ` · Tamanho ${order.size}` : ""}</p>
+          )}
+          {order.parentOrder && (
+            <p className="admin-muted">
+              Upsell do pedido{" "}
+              <Link href={`/admin/pedidos/${encodeURIComponent(order.parentOrder.orderNumber ?? "")}`} className="admin-link">{order.parentOrder.orderNumber}</Link>
+            </p>
+          )}
+          {order.upsellChildren.length > 0 && (
+            <div className="admin-linked">
+              <span className="admin-tag admin-tag--upsell">Upsell aceito</span>
+              <ul className="admin-items">
+                {order.upsellChildren.map((c) => (
+                  <li key={c.orderNumber}>
+                    <Link href={`/admin/pedidos/${encodeURIComponent(c.orderNumber ?? "")}`} className="admin-link">{c.orderNumber}</Link>
+                    {" · "}{c.productName} · {formatPrice(c.totalCents)} · {ORDER_STATUS_LABEL[c.status as keyof typeof ORDER_STATUS_LABEL] ?? c.status}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
           <p>{order.discountCents > 0 ? <>Subtotal {formatPrice(order.subtotalCents)} · Desconto -{formatPrice(order.discountCents)} · </> : null}Total: <strong>{formatPrice(order.totalCents)}</strong> · Pagamento: {ORDER_STATUS_LABEL[order.status] ?? order.status}</p>
           <p className="admin-muted">Criado em {order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}{order.paidAt ? ` · Pago em ${order.paidAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}` : ""}</p>

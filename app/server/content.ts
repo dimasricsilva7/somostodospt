@@ -4,7 +4,8 @@ import { db } from "@/app/lib/db";
 import { log } from "@/app/lib/log";
 import { catalog, productPriceCents, type CatalogProduct } from "@/app/config/catalog";
 import type { ProductMedia } from "@/app/config/product";
-import type { SiteTexts } from "@/app/types/content";
+import type { SiteTexts, SectionImages } from "@/app/types/content";
+import { SECTION_SLOTS, defaultSectionImage, type SectionKey } from "@/app/config/sections";
 
 export type { SiteTexts };
 
@@ -34,6 +35,39 @@ export async function saveTexts(partial: Partial<SiteTexts>): Promise<void> {
   const current = await getTexts();
   const value = { ...current, ...partial } as Prisma.InputJsonValue;
   await db.siteContent.upsert({ where: { key: "texts" }, update: { value }, create: { key: "texts", value } });
+}
+
+// ───────────────────────── Imagens das seções da landing ─────────────────────────
+
+/** IDs de mídia que o admin definiu por seção (vazio = usa a imagem padrão do código). */
+export async function getSectionImageOverrides(): Promise<Partial<Record<SectionKey, string>>> {
+  try {
+    const row = await db.siteContent.findUnique({ where: { key: "sectionImages" } });
+    return (row?.value ?? {}) as Partial<Record<SectionKey, string>>;
+  } catch {
+    return {};
+  }
+}
+
+/** Imagens resolvidas de cada seção: override do admin quando houver, senão o padrão do código. */
+export async function getSectionImages(): Promise<SectionImages> {
+  const overrides = await getSectionImageOverrides();
+  const out = {} as SectionImages;
+  for (const slot of SECTION_SLOTS) {
+    const def = defaultSectionImage(slot.key);
+    const id = overrides[slot.key];
+    out[slot.key] = id ? { src: `/media/${id}`, alt: def.alt, aspect: def.aspect } : def;
+  }
+  return out;
+}
+
+/** Define (ou limpa, com null) a imagem de uma seção. */
+export async function saveSectionImage(key: SectionKey, mediaId: string | null): Promise<void> {
+  const current = await getSectionImageOverrides();
+  if (mediaId) current[key] = mediaId;
+  else delete current[key];
+  const value = current as Prisma.InputJsonValue;
+  await db.siteContent.upsert({ where: { key: "sectionImages" }, update: { value }, create: { key: "sectionImages", value } });
 }
 
 // ───────────────────────── Catálogo mesclado (código + banco) ─────────────────────────

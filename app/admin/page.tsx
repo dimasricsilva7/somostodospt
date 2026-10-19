@@ -19,6 +19,7 @@ export default async function AdminHome() {
         <div className="admin-top__actions">
           <Link href="/" className="admin-link" target="_blank">Ver a loja ↗</Link>
           <Link href="/admin/ofertas" className="admin-link">Ofertas</Link>
+          <Link href="/admin/imagens" className="admin-link">Imagens das seções</Link>
           <Link href="/admin/textos" className="admin-link">Textos da página</Link>
           <LogoutButton />
         </div>

@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowRight, ShoppingBag } from "lucide-react";
-import { product } from "@/app/config/product";
+import { product, type ProductMedia as ProductMediaType } from "@/app/config/product";
 import type { CatalogProduct } from "@/app/config/catalog";
-import type { SiteTexts } from "@/app/types/content";
+import type { SiteTexts, SectionImages } from "@/app/types/content";
+import type { SectionKey } from "@/app/config/sections";
 import { AnnounceBar } from "./AnnounceBar";
 import { BrandMark } from "./BrandMark";
 import { CartDrawer } from "./CartDrawer";
@@ -20,7 +21,12 @@ function scrollToCollection() {
   document.getElementById("colecao")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function StorefrontExperience({ products, texts }: { products: CatalogProduct[]; texts: SiteTexts }) {
+export function StorefrontExperience({ products, texts, sectionImages }: { products: CatalogProduct[]; texts: SiteTexts; sectionImages: SectionImages }) {
+  // Imagem editável da seção → formato aceito pelo ProductMedia
+  const si = (key: SectionKey): ProductMediaType => {
+    const img = sectionImages[key];
+    return { id: `sec-${key}`, label: img.alt, alt: img.alt, src: img.src, aspect: img.aspect };
+  };
   return (
     <>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -56,7 +62,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
             </div>
             <div className="hero-section__visual">
               <span className="hero-section__star" aria-hidden="true">✦</span>
-              <ProductMedia asset={product.media[0]} priority sizes="(max-width: 900px) 100vw, 50vw" />
+              <ProductMedia asset={si("hero")} priority sizes="(max-width: 900px) 100vw, 50vw" />
               <div className="hero-section__label">Coleção<br />Somos Todos PT</div>
             </div>
           </div>
@@ -80,7 +86,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
         <section className="design-section">
           <div className="container design-section__layout">
             <div className="design-section__photo">
-              <ProductMedia asset={product.media[2]} sizes="(max-width: 900px) 100vw, 42vw" />
+              <ProductMedia asset={si("design")} sizes="(max-width: 900px) 100vw, 42vw" />
             </div>
             <div className="design-section__copy">
               <p className="eyebrow">QUALIDADE DA PEÇA</p>
@@ -108,8 +114,8 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
               <p>Informações confirmadas sobre a peça. As fotos de campanha são ilustrativas.</p>
             </div>
             <div className="details-section__grid">
-              <ProductMedia asset={product.media[3]} sizes="(max-width: 900px) 100vw, 50vw" />
-              <ProductMedia asset={product.media[6]} sizes="(max-width: 900px) 100vw, 50vw" />
+              <ProductMedia asset={si("details1")} sizes="(max-width: 900px) 100vw, 50vw" />
+              <ProductMedia asset={si("details2")} sizes="(max-width: 900px) 100vw, 50vw" />
               <div className="spec-card">
                 <p className="eyebrow">FICHA TÉCNICA</p>
                 <dl>
@@ -150,7 +156,7 @@ export function StorefrontExperience({ products, texts }: { products: CatalogPro
                 VER A COLEÇÃO <ArrowRight size={19} aria-hidden="true" />
               </button>
             </div>
-            <ProductMedia asset={product.media[8]} sizes="(max-width: 900px) 100vw, 42vw" />
+            <ProductMedia asset={si("closing")} sizes="(max-width: 900px) 100vw, 42vw" />
           </div>
         </section>
       </main>
