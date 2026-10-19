@@ -19,7 +19,7 @@ const PERIODS: { key: DashboardPeriod; label: string }[] = [
   { key: "all", label: "Tudo" },
 ];
 
-type Tab = "pedidos" | "online" | "abandonados" | "modelos";
+type Tab = "pedidos" | "online" | "abandonados" | "ranking" | "modelos";
 
 const money = (c: number) => formatPrice(c) ?? "—";
 const FULFILL: Record<string, string> = { PENDING: "A preparar", PROCESSING: "Separando", SHIPPED: "Enviado", DELIVERED: "Entregue" };
@@ -141,6 +141,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
   }, [period]);
 
   const { stats, orders, abandoned, online } = data;
+  const models = data.models ?? [];
 
   return (
     <>
@@ -161,6 +162,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
         <button role="tab" aria-selected={tab === "pedidos"} className={tab === "pedidos" ? "is-active" : ""} onClick={() => setTab("pedidos")}>Pedidos ({orders.length})</button>
         <button role="tab" aria-selected={tab === "online"} className={tab === "online" ? "is-active" : ""} onClick={() => setTab("online")}>Online ao vivo ({online.count})</button>
         <button role="tab" aria-selected={tab === "abandonados"} className={tab === "abandonados" ? "is-active" : ""} onClick={() => setTab("abandonados")}>Abandonados ({abandoned.length})</button>
+        <button role="tab" aria-selected={tab === "ranking"} className={tab === "ranking" ? "is-active" : ""} onClick={() => setTab("ranking")}>Mais vendidos</button>
         <button role="tab" aria-selected={tab === "modelos"} className={tab === "modelos" ? "is-active" : ""} onClick={() => setTab("modelos")}>Modelos</button>
       </div>
 
@@ -233,6 +235,31 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                       <td>{l.productName ?? "—"}{l.size ? ` · ${l.size}` : ""}</td>
                       <td>{money(l.totalCents)}</td>
                       <td><div className="lead-actions">{wa && <a className="admin-link" href={wa} target="_blank" rel="noreferrer">WhatsApp ↗</a>}<LeadEmailButton email={l.email} /></div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {tab === "ranking" && (
+        <div className="admin-table-wrap">
+          {models.length === 0 ? <p className="admin-pad admin-muted">Nenhuma venda registrada no período. (Order bumps não entram neste ranking.)</p> : (
+            <table className="admin-table">
+              <thead><tr><th>#</th><th>Modelo</th><th>Gerados (un.)</th><th>Pagos (un.)</th><th>Conversão</th><th>Receita paga</th></tr></thead>
+              <tbody>
+                {models.map((m, i) => {
+                  const conv = m.generatedUnits > 0 ? Math.round((m.paidUnits / m.generatedUnits) * 100) : 0;
+                  return (
+                    <tr key={m.slug}>
+                      <td>{i + 1}</td>
+                      <td className="col-produto">{m.name}</td>
+                      <td>{m.generatedUnits} <small className="admin-muted">({m.generatedOrders} ped.)</small></td>
+                      <td><strong>{m.paidUnits}</strong> <small className="admin-muted">({m.paidOrders} ped.)</small></td>
+                      <td>{conv}%</td>
+                      <td>{money(m.paidRevenueCents)}</td>
                     </tr>
                   );
                 })}

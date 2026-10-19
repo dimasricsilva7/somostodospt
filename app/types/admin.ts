@@ -29,6 +29,16 @@ export type OnlineRow = { path: string | null; device: string | null; lastSeenAt
 
 export type DashboardStats = { revenueCents: number; total: number; paid: number; pending: number };
 
+export type ModelRank = {
+  slug: string;
+  name: string;
+  generatedUnits: number;
+  generatedOrders: number;
+  paidUnits: number;
+  paidOrders: number;
+  paidRevenueCents: number;
+};
+
 export type DashboardPeriod = "today" | "yesterday" | "7d" | "30d" | "all";
 
 export type DashboardData = {
@@ -37,5 +47,6 @@ export type DashboardData = {
   orders: AdminOrderRow[];
   abandoned: AbandonedLead[];
   online: { count: number; rows: OnlineRow[] };
+  models: ModelRank[];
   ok: boolean;
 };
