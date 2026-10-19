@@ -7,6 +7,7 @@ import { AnnounceBar } from "@/app/components/AnnounceBar";
 import { Heartbeat } from "@/app/components/Heartbeat";
 import { BrandMark } from "@/app/components/BrandMark";
 import { formatPrice } from "@/app/config/product";
+import { PIX_EXPIRATION_MINUTES } from "@/app/config/commerce";
 import { track } from "@/app/lib/tracking";
 import type { PublicOrder } from "@/app/types/order";
 
@@ -143,6 +144,7 @@ export function OrderClient({ orderNumber, token, processorName, upsell }: { ord
               <div className="pix-box">
                 <h1>Pague com PIX para confirmar</h1>
                 <p className="pix-box__sub">Abra o app do seu banco, escaneie o QR Code ou use o código copia e cola. A confirmação é automática.</p>
+                <p className="pix-expire-warn">⏱️ Este PIX expira em <strong>{PIX_EXPIRATION_MINUTES} minutos</strong>. Pague agora para garantir o seu pedido.</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {qr ? <img className="pix-qr" src={qr} alt={`QR Code PIX do pedido ${order.orderNumber}`} width={240} height={240} /> : null}
                 <div className="pix-value">{money(order.totalCents)}</div>
@@ -155,10 +157,13 @@ export function OrderClient({ orderNumber, token, processorName, upsell }: { ord
                 </div>
 
                 {processorName && (
-                  <p className="processor-note processor-note--pix">
-                    <ShieldCheck size={15} aria-hidden="true" />
-                    <span>O recebedor aparece como <strong>{processorName}</strong> — é o processador de pagamentos oficial da Somos Todos PT. Seu pedido <strong>{order.orderNumber}</strong> está associado à sua compra.</span>
-                  </p>
+                  <div className="processor-note processor-note--pix">
+                    <ShieldCheck size={16} aria-hidden="true" />
+                    <span>
+                      <span className="processor-note__badge">Pagamento processado por: <strong>{processorName}</strong></span>
+                      É o processador de pagamentos oficial da Somos Todos PT — no app do seu banco o recebedor aparece como <strong>{processorName}</strong>. Pode concluir com tranquilidade: seu pedido <strong>{order.orderNumber}</strong> está associado a esta compra.
+                    </span>
+                  </div>
                 )}
 
                 <div className="pix-status">

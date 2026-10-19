@@ -7,7 +7,7 @@
 import { product } from "./product";
 
 /** Tempo de expiração do PIX (minutos). Respeitado pelo gateway quando possível. */
-export const PIX_EXPIRATION_MINUTES = 30;
+export const PIX_EXPIRATION_MINUTES = 15;
 
 /** Quantidade máxima por pedido. */
 export const MAX_QUANTITY = 5;
@@ -23,7 +23,7 @@ export const shipping = {
   mode: "free" as "free" | "flat",
   cents: 0,
   label: "Frete grátis para todo o Brasil",
-  etaText: "Entrega em 2 a 3 dias úteis", // prazo informado pelo responsável (2026-10-16)
+  etaText: "Entrega FULL: compre hoje e receba amanhã", // prazo informado pelo responsável (2026-10-19)
 } as const;
 
 /** Desconto progressivo: X% ao levar `minUnits` ou mais camisetas (total do carrinho). */
@@ -42,18 +42,18 @@ export function discountCentsFor(subtotalCents: number, totalUnits: number): num
 /** Barra de aviso no topo do site e do checkout (condições comerciais reais). */
 export const announcement = {
   enabled: true,
-  text: "LEVE 2 CAMISETAS E GANHE 20% OFF • FRETE GRÁTIS • Entrega em 2 a 3 dias úteis",
+  text: "🚚 ENTREGA FULL: COMPRE HOJE E RECEBA AMANHÃ • LEVE 2 CAMISETAS E GANHE 20% OFF • FRETE GRÁTIS",
 } as const;
 
 /** Modal de aviso de entrega — abre após `delaySeconds` na landing (1x por sessão). */
 export const deliveryNotice = {
   enabled: true,
   delaySeconds: 10,
-  title: "Receba sua camiseta antes da eleição 🗳️",
+  title: "Entrega FULL: compre hoje e receba amanhã 🚚",
   lines: [
-    "Todas as compras estão sendo entregues em 2 a 3 dias.",
+    "Comprando hoje, sua camiseta chega amanhã — Entrega FULL.",
     "Estamos realizando entregas inclusive aos finais de semana.",
-    "Temos um centro de distribuição em cada capital do Brasil para garantir o prazo correto — tudo para você receber sua camiseta a tempo.",
+    "Temos um centro de distribuição em cada capital do Brasil para garantir a entrega no dia seguinte.",
   ],
   ctaLabel: "Ver a coleção",
 } as const;
@@ -70,10 +70,10 @@ export function shippingCents(): number {
  * Enquanto `enabled` for false, a barra não aparece.
  */
 export const urgency = {
-  enabled: false,
+  enabled: true,
   type: "promo" as "promo" | "stock",
-  message: "",
-  endsAt: null as string | null, // ISO 8601, apenas se a promoção tiver prazo real
+  message: "⏳ ÚLTIMOS DIAS — garanta o seu antes que acabe",
+  endsAt: null as string | null, // ISO 8601, apenas se a promoção tiver prazo real (sem cronômetro falso)
   stockLeft: null as number | null, // apenas se o estoque for realmente esse
 } as const;
 

@@ -280,7 +280,10 @@ p { line-height: 1.6; }
 .order-summary-head p { margin: 4px 0 0; font-size: .9rem; }
 .pix-box { padding: clamp(24px, 5vw, 40px); background: #fff; border: 1px solid var(--line); text-align: center; }
 .pix-box h1 { font-size: clamp(1.7rem, 4.5vw, 2.5rem); }
-.pix-box__sub { max-width: 440px; margin: 0 auto 22px; color: #555; font-size: .9rem; }
+.pix-box__sub { max-width: 440px; margin: 0 auto 14px; color: #555; font-size: .9rem; }
+.pix-expire-warn { max-width: 440px; margin: 0 auto 22px; padding: 10px 14px; border-radius: 10px; background: #fff4e5; color: #9a5b00; font-size: .86rem; line-height: 1.4; }
+.pix-expire-warn strong { color: #7a4700; }
+.processor-note__badge { display: block; margin-bottom: 5px; font-weight: 800; color: #184a2e; }
 .pix-qr { display: block; width: 240px; height: 240px; margin: 0 auto 16px; border: 1px solid var(--line); }
 .pix-value { margin-bottom: 18px; font-family: var(--display); font-size: 2rem; letter-spacing: -.03em; color: var(--red-dark); }
 .pix-copy { display: grid; gap: 10px; margin-bottom: 20px; }

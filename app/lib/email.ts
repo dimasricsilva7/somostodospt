@@ -84,7 +84,7 @@ export function renderPaid(p: { name: string; orderNumber: string; productName: 
     "Pagamento confirmado! 🎉",
     `<p>Olá, ${p.name}. Recebemos o pagamento do seu pedido <strong>${p.orderNumber}</strong>.</p>
      <p>${p.productName}${p.size ? ` · Tamanho ${p.size}` : ""} · <strong>${brl(p.totalCents)}</strong></p>
-     <p>Já estamos preparando o envio. A entrega é em <strong>2 a 3 dias úteis</strong>, com frete grátis.</p>
+     <p>Já estamos preparando o envio. <strong>Entrega FULL</strong>: você recebe amanhã, com frete grátis.</p>
      <p>${button(p.url, "Acompanhar meu pedido")}</p>`
   );
 }
@@ -102,7 +102,7 @@ export function renderPending(p: { name: string; orderNumber: string; productNam
   return base(
     "Seu pedido está aguardando pagamento",
     `<p>Olá, ${p.name}. Seu pedido <strong>${p.orderNumber}</strong> (${p.productName}${p.size ? ` · ${p.size}` : ""} · <strong>${brl(p.totalCents)}</strong>) está quase lá!</p>
-     <p>Pague com PIX para confirmar. Se o código tiver expirado, é só gerar um novo na página do pedido. Entrega em <strong>2 a 3 dias úteis</strong>, frete grátis.</p>
+     <p>Pague com PIX para confirmar. Se o código tiver expirado, é só gerar um novo na página do pedido. <strong>Entrega FULL</strong>: confirmando hoje, você recebe amanhã, frete grátis.</p>
      <p>${button(p.url, "Pagar com PIX")}</p>`
   );
 }
@@ -113,7 +113,7 @@ export function renderAbandoned(p: { name: string | null; productName: string | 
   return base(
     "Você esqueceu algo no carrinho 👀",
     `<p>${hi} Vimos que você começou a compra${prod} mas não finalizou.</p>
-     <p>Pague com PIX em segundos — entrega em <strong>2 a 3 dias úteis</strong> e <strong>frete grátis</strong> para todo o Brasil.</p>
+     <p>Pague com PIX em segundos — <strong>Entrega FULL</strong>: compre hoje e receba amanhã, com <strong>frete grátis</strong> para todo o Brasil.</p>
      <p>${button(p.url, "Concluir minha compra")}</p>`
   );
 }
