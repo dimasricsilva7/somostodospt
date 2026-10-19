@@ -6,6 +6,7 @@ import { catalog, productPriceCents, type CatalogProduct } from "@/app/config/ca
 import type { ProductMedia } from "@/app/config/product";
 import type { SiteTexts, SectionImages } from "@/app/types/content";
 import { SECTION_SLOTS, defaultSectionImage, type SectionKey } from "@/app/config/sections";
+import { announcement, urgency } from "@/app/config/commerce";
 
 export type { SiteTexts };
 
@@ -19,6 +20,8 @@ export const DEFAULT_TEXTS: SiteTexts = {
   collectionTitle: "Escolha a sua camiseta.",
   collectionSubtitle: "Cada modelo tem sua estampa. Selecione o tamanho no card e finalize com PIX.",
   paymentProcessorName: "GBK LTDA",
+  announcementText: announcement.text,
+  urgencyMessage: urgency.message,
 };
 
 export async function getTexts(): Promise<SiteTexts> {
@@ -97,6 +100,7 @@ function applyOverride(base: CatalogProduct, o: Awaited<ReturnType<typeof db.pro
     compareAtPriceInCents: o.compareAtPriceCents ?? base.compareAtPriceInCents,
     sizes: Array.isArray(o.sizes) ? (o.sizes as string[]) : base.sizes,
     active: typeof o.active === "boolean" ? o.active : base.active,
+    bestSeller: typeof o.bestSeller === "boolean" ? o.bestSeller : base.bestSeller,
     media,
   };
 }
@@ -120,6 +124,7 @@ function customToCatalog(c: Awaited<ReturnType<typeof db.customProduct.findMany>
     sizes: Array.isArray(c.sizes) ? (c.sizes as string[]) : [],
     media,
     active: c.active,
+    bestSeller: c.bestSeller,
   };
 }
 
@@ -193,6 +198,7 @@ export async function createCustomProduct(name: string, edit: ProductEdit): Prom
       compareAtPriceCents: edit.compareAtPriceCents ?? null,
       sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
       active: edit.active ?? false,
+      bestSeller: edit.bestSeller ?? false,
       mainImageId: edit.mainImageId ?? null,
       galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     },
@@ -210,6 +216,7 @@ export async function saveCustomProduct(slug: string, edit: ProductEdit & { name
       compareAtPriceCents: edit.compareAtPriceCents ?? null,
       sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
       active: edit.active ?? false,
+      bestSeller: edit.bestSeller ?? false,
       mainImageId: edit.mainImageId ?? null,
       galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     },
@@ -232,6 +239,7 @@ export type ProductEdit = {
   compareAtPriceCents?: number | null;
   sizes?: string[];
   active?: boolean;
+  bestSeller?: boolean;
   mainImageId?: string | null;
   galleryIds?: string[];
   sortOrder?: number;
@@ -253,6 +261,7 @@ export async function saveProductContent(slug: string, edit: ProductEdit): Promi
     compareAtPriceCents: edit.compareAtPriceCents ?? null,
     sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
     active: edit.active ?? null,
+    bestSeller: edit.bestSeller ?? null,
     mainImageId: edit.mainImageId ?? null,
     galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     sortOrder: edit.sortOrder ?? null,

@@ -21,7 +21,7 @@ type Fields = Record<string, string>;
 const CURRENCY = "BRL";
 const money = (c: number) => formatPrice(c) ?? "—";
 
-export function CheckoutClient({ products, bumps = [], processorName, initialSlug, initialSize }: { products: CheckoutProduct[]; bumps?: Bump[]; processorName?: string; initialSlug?: string; initialSize?: string }) {
+export function CheckoutClient({ products, bumps = [], processorName, announcementText, initialSlug, initialSize }: { products: CheckoutProduct[]; bumps?: Bump[]; processorName?: string; announcementText?: string; initialSlug?: string; initialSize?: string }) {
   const router = useRouter();
   const cart = useCart();
   const bySlug = new Map(products.map((p) => [p.slug, p]));
@@ -161,7 +161,7 @@ export function CheckoutClient({ products, bumps = [], processorName, initialSlu
     return (
       <div className="checkout-shell">
         <Heartbeat />
-        <AnnounceBar />
+        <AnnounceBar text={announcementText} />
         <header className="checkout-top">
           <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
           <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>
@@ -178,7 +178,7 @@ export function CheckoutClient({ products, bumps = [], processorName, initialSlu
   return (
     <div className="checkout-shell">
       <Heartbeat />
-      <AnnounceBar />
+      <AnnounceBar text={announcementText} />
       <header className="checkout-top">
         <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
         <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>

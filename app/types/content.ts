@@ -7,6 +7,10 @@ export type SiteTexts = {
   collectionSubtitle: string;
   /** Nome que aparece como recebedor do PIX (adquirente). Editável no admin. */
   paymentProcessorName: string;
+  /** Texto da barra de anúncio do topo (entrega full, 2 camisetas 20% off, frete). Vazio = oculta. */
+  announcementText: string;
+  /** Texto da barra de urgência (últimos dias). Vazio = oculta. */
+  urgencyMessage: string;
 };
 
 /** Imagem resolvida de uma seção da landing (override do admin ou padrão do código). */

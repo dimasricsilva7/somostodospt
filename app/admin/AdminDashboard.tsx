@@ -285,8 +285,8 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                   ) : <span className="admin-product__noimg">sem arte</span>}
                 </div>
                 <div className="admin-product__info">
-                  <strong>{p.name}</strong>
-                  <span>{price !== undefined ? money(price) : "sem preço"} · {p.sizes.length} tamanhos</span>
+                  <strong>{p.bestSeller ? "⭐ " : ""}{p.name}</strong>
+                  <span>{price !== undefined ? money(price) : "sem preço"} · {p.sizes.length} tamanhos{p.bestSeller ? " · mais vendido" : ""}</span>
                 </div>
                 <span className={`admin-tag ${sellable ? "admin-tag--on" : "admin-tag--off"}`}>{sellable ? "À venda" : "Em breve"}</span>
               </Link>

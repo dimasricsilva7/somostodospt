@@ -27,6 +27,8 @@ export type CatalogProduct = {
   /** Imagens individuais da estampa (sem mosaicos/colagens). Vazio = sem arte ainda. */
   media: ProductMedia[];
   active: boolean;
+  /** Destaque "Mais vendido" no card (curadoria manual pelo painel). */
+  bestSeller?: boolean;
   /** Arquivo de arte que falta para ativar o modelo (02–06). */
   neededImage?: string;
 };

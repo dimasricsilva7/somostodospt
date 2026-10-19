@@ -224,6 +224,7 @@ model ProductContent {
   mainImageId         String?
   galleryIds          Json?
   sortOrder           Int?
+  bestSeller          Boolean?
   updatedAt           DateTime @updatedAt
 }
 
@@ -266,6 +267,7 @@ model CustomProduct {
   mainImageId         String?
   galleryIds          Json?
   sortOrder           Int      @default(100)
+  bestSeller          Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

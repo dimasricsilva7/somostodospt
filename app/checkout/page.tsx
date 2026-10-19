@@ -28,6 +28,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
       products={products}
       bumps={bumps}
       processorName={texts.paymentProcessorName}
+      announcementText={texts.announcementText}
       initialSlug={produto}
       initialSize={tam?.toUpperCase()}
     />

@@ -18,7 +18,7 @@ function format(ms: number): string {
  * Promoção com prazo real: conta até `endsAt` verdadeiro (some quando acaba).
  * Nunca cria cronômetro falso nem estoque artificial.
  */
-export function UrgencyBar() {
+export function UrgencyBar({ message }: { message?: string } = {}) {
   const endsAtMs = urgency.endsAt ? new Date(urgency.endsAt).getTime() : null;
   const [remaining, setRemaining] = useState<number | null>(endsAtMs ? endsAtMs - Date.now() : null);
 
@@ -28,7 +28,8 @@ export function UrgencyBar() {
     return () => clearInterval(id);
   }, [endsAtMs]);
 
-  if (!urgency.enabled || !urgency.message) return null;
+  const value = (message ?? urgency.message)?.trim();
+  if (!urgency.enabled || !value) return null;
   // Promoção com prazo que já expirou → não mostra nada (sem contagem falsa).
   if (urgency.type === "promo" && endsAtMs && remaining !== null && remaining <= 0) return null;
   if (urgency.type === "stock" && (urgency.stockLeft == null || urgency.stockLeft <= 0)) return null;
@@ -37,7 +38,7 @@ export function UrgencyBar() {
     <div className="urgency-bar" role="status">
       <div className="container urgency-bar__inner">
         {urgency.type === "promo" ? <Clock size={17} aria-hidden="true" /> : <Flame size={17} aria-hidden="true" />}
-        <span>{urgency.message}</span>
+        <span>{value}</span>
         {urgency.type === "promo" && endsAtMs && remaining !== null && <strong>{format(remaining)}</strong>}
         {urgency.type === "stock" && urgency.stockLeft != null && <strong>{urgency.stockLeft} restantes</strong>}
       </div>

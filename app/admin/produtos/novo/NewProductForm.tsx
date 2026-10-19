@@ -17,6 +17,7 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
   const [compareReais, setCompareReais] = useState("");
   const [sizes, setSizes] = useState<string[]>([...allSizes]);
   const [active, setActive] = useState(true);
+  const [bestSeller, setBestSeller] = useState(false);
   const [mainImageId, setMainImageId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -57,7 +58,7 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
       const res = await fetch("/api/admin/product-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, priceCents: reaisToCents(priceReais), compareAtPriceCents: reaisToCents(compareReais), sizes, active, mainImageId }),
+        body: JSON.stringify({ name, description, priceCents: reaisToCents(priceReais), compareAtPriceCents: reaisToCents(compareReais), sizes, active, bestSeller, mainImageId }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; slug?: string; error?: string };
       if (res.ok && data.slug) {
@@ -107,6 +108,11 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
       <label className="admin-check">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
         <span>Já colocar à venda (precisa de imagem e preço).</span>
+      </label>
+
+      <label className="admin-check">
+        <input type="checkbox" checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />
+        <span>⭐ Destacar como <strong>Mais vendido</strong> (selo no card da loja).</span>
       </label>
 
       {msg && <p className={msg.type === "ok" ? "admin-ok" : "admin-error"}>{msg.text}</p>}

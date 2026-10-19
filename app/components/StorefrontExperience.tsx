@@ -30,8 +30,8 @@ export function StorefrontExperience({ products, texts, sectionImages }: { produ
   return (
     <>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
-      <AnnounceBar />
-      <UrgencyBar />
+      <AnnounceBar text={texts.announcementText} />
+      <UrgencyBar message={texts.urgencyMessage} />
       <header className="site-header">
         <div className="container site-header__inner">
           <a href="#produto" aria-label="Somos Todos PT — ir para o início"><BrandMark compact /></a>

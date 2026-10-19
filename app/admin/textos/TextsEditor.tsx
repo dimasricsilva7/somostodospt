@@ -12,9 +12,11 @@ const LABELS: Record<keyof SiteTexts, string> = {
   collectionTitle: "Título da coleção",
   collectionSubtitle: "Subtítulo da coleção",
   paymentProcessorName: "Nome do recebedor no PIX (adquirente)",
+  announcementText: "Barra do topo (entrega full • 2 camisetas 20% off • frete)",
+  urgencyMessage: "Barra de urgência (últimos dias) — deixe vazio para ocultar",
 };
 
-const MULTI: (keyof SiteTexts)[] = ["heroLead", "heroStatement", "collectionSubtitle"];
+const MULTI: (keyof SiteTexts)[] = ["heroLead", "heroStatement", "collectionSubtitle", "announcementText"];
 
 export function TextsEditor({ initial }: { initial: SiteTexts }) {
   const router = useRouter();

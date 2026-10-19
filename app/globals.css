@@ -325,6 +325,7 @@ p { line-height: 1.6; }
 .catalog-card__media .product-media__image { object-fit: contain; padding: 6px; }
 .catalog-card__placeholder { display: grid; place-content: center; justify-items: center; gap: 8px; width: 100%; height: 100%; color: #a98f90; font-size: .8rem; font-weight: 700; }
 .catalog-card__badge { position: absolute; top: 12px; left: 12px; padding: 5px 11px; background: var(--ink); color: #fff; font-size: .66rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.catalog-card__badge--best { background: linear-gradient(135deg, #f6a609, #e8590c); color: #fff; box-shadow: 0 4px 12px rgba(232, 89, 12, .35); }
 .catalog-card__body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 18px 18px 20px; }
 .catalog-card__body h3 { margin: 0; font-size: 1.04rem; line-height: 1.2; }
 .catalog-card__price { margin: 0; display: flex; align-items: baseline; gap: 9px; font-family: var(--display); font-size: 1.5rem; letter-spacing: -.03em; color: var(--red-dark); }

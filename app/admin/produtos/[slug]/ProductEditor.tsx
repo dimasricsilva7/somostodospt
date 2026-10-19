@@ -10,6 +10,7 @@ type Initial = {
   compareReais: string;
   sizes: string[];
   active: boolean;
+  bestSeller: boolean;
   mainImageId: string | null;
   currentImage: string | null;
 };
@@ -28,6 +29,7 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
   const [compareReais, setCompareReais] = useState(initial.compareReais);
   const [sizes, setSizes] = useState<string[]>(initial.sizes);
   const [active, setActive] = useState(initial.active);
+  const [bestSeller, setBestSeller] = useState(initial.bestSeller);
   const [mainImageId, setMainImageId] = useState<string | null>(initial.mainImageId);
   const [preview, setPreview] = useState<string | null>(initial.currentImage);
   const [uploading, setUploading] = useState(false);
@@ -77,6 +79,7 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
           compareAtPriceCents: reaisToCents(compareReais),
           sizes,
           active,
+          bestSeller,
           mainImageId,
         }),
       });
@@ -129,6 +132,11 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
       <label className="admin-check">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
         <span>Modelo à venda (ativo). Precisa ter imagem e preço para aparecer na loja.</span>
+      </label>
+
+      <label className="admin-check">
+        <input type="checkbox" checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />
+        <span>⭐ Destacar como <strong>Mais vendido</strong> (mostra o selo no card da loja).</span>
       </label>
 
       {msg && <p className={msg.type === "ok" ? "admin-ok" : "admin-error"}>{msg.text}</p>}

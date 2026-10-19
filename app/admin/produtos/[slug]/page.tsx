@@ -32,6 +32,7 @@ export default async function AdminProductPage({ params }: { params: Promise<{ s
           compareReais: p.compareAtPriceInCents ? (p.compareAtPriceInCents / 100).toFixed(2) : "",
           sizes: p.sizes,
           active: p.active,
+          bestSeller: p.bestSeller ?? false,
           mainImageId: override?.mainImageId ?? custom?.mainImageId ?? null,
           currentImage: p.media[0]?.src ?? null,
         }}

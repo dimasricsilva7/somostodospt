@@ -48,6 +48,7 @@ export function CatalogCard({ product }: { product: CatalogProduct }) {
           </div>
         )}
         {!sellable && <span className="catalog-card__badge">Em breve</span>}
+        {sellable && product.bestSeller && <span className="catalog-card__badge catalog-card__badge--best">⭐ Mais vendido</span>}
       </div>
 
       <div className="catalog-card__body">

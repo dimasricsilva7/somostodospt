@@ -36,5 +36,5 @@ export default async function OrderPage({
   }
 
   const [texts, upsell] = await Promise.all([getTexts(), getActiveUpsell()]);
-  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} upsell={upsell} />;
+  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} announcementText={texts.announcementText} upsell={upsell} />;
 }
