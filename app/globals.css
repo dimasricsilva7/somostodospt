@@ -387,6 +387,11 @@ p { line-height: 1.6; }
 .online-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #888; }
 .online-dot--live { color: var(--green); }
 .online-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: stpt-pulse 1.6s infinite; }
+.where-tag { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .78rem; font-weight: 800; }
+.where-tag--hot { background: #fdecef; color: var(--red-dark, #b3123a); }
+.where-tag--wait { background: #fff4e5; color: #9a5b00; }
+.where-tag--paid { background: #e9f7ef; color: #1b7a43; }
+.where-tag--cold { background: #f1f1f1; color: #777; }
 .online-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding: 22px; background: #fff; border: 1px solid var(--line); }
 .online-hero > span:last-child { color: #555; font-size: .95rem; font-weight: 700; }
 @media (max-width: 560px) { .admin-quick { grid-template-columns: 1fr; } }

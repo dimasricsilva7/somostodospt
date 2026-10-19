@@ -22,6 +22,18 @@ export async function touchSession(id: string, visitorId: string, path: string |
 // (tolera 1 ping perdido), batendo com o status "ativo agora".
 const ONLINE_WINDOW_MS = 60_000;
 
+/** Extrai o número do pedido de uma URL /pedido/NUMERO (ignora query e barras). */
+function orderNumberFromPath(path: string | null): string | null {
+  if (!path) return null;
+  const m = path.match(/^\/pedido\/([^/?#]+)/);
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
 /** Visitantes realmente ativos agora (atividade no último minuto). */
 export async function onlineNow(limit = 100): Promise<{ count: number; rows: OnlineRow[]; ok: boolean }> {
   try {
@@ -30,7 +42,26 @@ export async function onlineNow(limit = 100): Promise<{ count: number; rows: Onl
       db.visitorSession.count({ where: { lastSeenAt: { gte: since } } }),
       db.visitorSession.findMany({ where: { lastSeenAt: { gte: since } }, orderBy: { lastSeenAt: "desc" }, take: limit }),
     ]);
-    return { count, rows: sessions.map((s) => ({ path: s.path, device: s.device, lastSeenAt: s.lastSeenAt.toISOString(), firstSeenAt: s.firstSeenAt.toISOString() })), ok: true };
+
+    // Cruza quem está na tela do pedido com o status real daquele pedido.
+    const orderNumbers = Array.from(new Set(sessions.map((s) => orderNumberFromPath(s.path)).filter((n): n is string => !!n)));
+    const statusByOrder = new Map<string, string>();
+    if (orderNumbers.length > 0) {
+      const orders = await db.order.findMany({ where: { orderNumber: { in: orderNumbers } }, select: { orderNumber: true, status: true } }).catch(() => []);
+      for (const o of orders) if (o.orderNumber) statusByOrder.set(o.orderNumber, o.status);
+    }
+
+    const rows: OnlineRow[] = sessions.map((s) => {
+      const on = orderNumberFromPath(s.path);
+      return {
+        path: s.path,
+        device: s.device,
+        lastSeenAt: s.lastSeenAt.toISOString(),
+        firstSeenAt: s.firstSeenAt.toISOString(),
+        orderStatus: on ? statusByOrder.get(on) ?? null : undefined,
+      };
+    });
+    return { count, rows, ok: true };
   } catch {
     return { count: 0, rows: [], ok: false };
   }

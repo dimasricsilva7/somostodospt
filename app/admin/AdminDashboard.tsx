@@ -38,6 +38,28 @@ function pageName(path: string | null) {
   if (path.startsWith("/checkout")) return "Checkout";
   return path;
 }
+
+/** Descreve o que a pessoa está fazendo na tela do pedido, pelo status real. */
+function wherePedido(status: string | null | undefined): { text: string; tone: "hot" | "wait" | "paid" | "cold" } {
+  switch (status) {
+    case "PENDING":
+      return { text: "Tela do pedido · gerando PIX", tone: "wait" };
+    case "PIX_GENERATED":
+      return { text: "Copiando o PIX · aguardando pagamento", tone: "hot" };
+    case "PAID":
+      return { text: "Voltou ver o pedido · ✅ pago", tone: "paid" };
+    case "EXPIRED":
+      return { text: "Voltou ao pedido · PIX expirado", tone: "cold" };
+    case "FAILED":
+    case "CANCELLED":
+      return { text: `Tela do pedido · ${ORDER_STATUS_LABEL[status as OrderStatus] ?? status}`, tone: "cold" };
+    case "REFUNDED":
+    case "CHARGEBACK":
+      return { text: `Voltou ao pedido · ${ORDER_STATUS_LABEL[status as OrderStatus] ?? status}`, tone: "cold" };
+    default:
+      return { text: "Tela do pedido", tone: "wait" };
+  }
+}
 function dt(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
@@ -204,9 +226,11 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
               <tbody>
                 {online.rows.map((r, i) => {
                   const act = activity(r.lastSeenAt);
+                  const isPedido = r.path?.startsWith("/pedido");
+                  const where = isPedido ? wherePedido(r.orderStatus) : null;
                   return (
                     <tr key={i}>
-                      <td>{pageName(r.path)}</td>
+                      <td>{where ? <span className={`where-tag where-tag--${where.tone}`}>{where.text}</span> : pageName(r.path)}</td>
                       <td>{r.device ?? "—"}</td>
                       <td>{durLabel(r.firstSeenAt)}</td>
                       <td><span className={act.live ? "online-dot online-dot--live" : "online-dot"}>{act.live && <i />}{act.text}</span></td>
