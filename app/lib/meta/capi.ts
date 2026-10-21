@@ -7,8 +7,10 @@ import { sha256 } from "@/app/lib/crypto";
  * Purchase só é enviado após pagamento confirmado pelo gateway.
  *
  * Configuração por ambiente:
- * - META_CAPI_TOKENS = "pixelId:token,pixelId2:token2"   (um ou mais pixels)
- * - ou META_ACCESS_TOKEN + NEXT_PUBLIC_META_PIXEL_ID       (pixel único)
+ * - META_CAPI_TOKENS = "pixelId:token,pixelId2:token2"   (pares existentes)
+ * - META_CAPI_TOKENS_ADDITIONAL = "pixelId:token"          (adicionar sem editar os existentes)
+ * - META_ACCESS_TOKEN + NEXT_PUBLIC_META_PIXEL_ID          (compatibilidade legada)
+ * As duas configurações podem coexistir; IDs duplicados usam META_CAPI_TOKENS.
  */
 const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v21.0";
 
@@ -40,9 +42,13 @@ export type CapiEvent = {
 
 /** Pixels + tokens configurados no ambiente. */
 export function capiTargets(): { pixelId: string; token: string }[] {
-  const raw = process.env.META_CAPI_TOKENS?.trim();
-  if (raw) {
-    return raw
+  const targets = new Map<string, { pixelId: string; token: string }>();
+  const rawValues = [process.env.META_CAPI_TOKENS, process.env.META_CAPI_TOKENS_ADDITIONAL];
+  for (const rawValue of rawValues) {
+    const raw = rawValue?.trim();
+    if (!raw) continue;
+
+    raw
       .split(",")
       .map((pair) => pair.trim())
       .filter(Boolean)
@@ -50,11 +56,19 @@ export function capiTargets(): { pixelId: string; token: string }[] {
         const idx = pair.indexOf(":");
         return idx > 0 ? { pixelId: pair.slice(0, idx).trim(), token: pair.slice(idx + 1).trim() } : null;
       })
-      .filter((t): t is { pixelId: string; token: string } => Boolean(t?.pixelId && t?.token));
+      .filter((target): target is { pixelId: string; token: string } => Boolean(target?.pixelId && target?.token))
+      .forEach((target) => {
+        if (!targets.has(target.pixelId)) targets.set(target.pixelId, target);
+      });
   }
+
+  // Mantém compatibilidade com a configuração antiga; valores explícitos em
+  // Valores explícitos de CAPI têm precedência para o mesmo pixel.
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
   const token = process.env.META_ACCESS_TOKEN?.trim();
-  return pixelId && token ? [{ pixelId, token }] : [];
+  if (pixelId && token && !targets.has(pixelId)) targets.set(pixelId, { pixelId, token });
+
+  return Array.from(targets.values());
 }
 
 export const capiEnabled = () => capiTargets().length > 0;

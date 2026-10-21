@@ -16,6 +16,7 @@ type TrackingWindow = Window &
     dataLayer?: unknown[];
     fbq?: ((...args: unknown[]) => void) & { queue?: unknown[][]; loaded?: boolean; version?: string; callMethod?: (...a: unknown[]) => void };
     _fbq?: unknown;
+    _stptMetaPixelIds?: Set<string>;
     gtag?: (...args: unknown[]) => void;
   };
 
@@ -146,6 +147,12 @@ export function buildClientContext(adsConsent: boolean) {
   };
 }
 
+function configuredMetaPixelIds(): string[] {
+  return [...(process.env.NEXT_PUBLIC_META_PIXEL_IDS ?? "").split(","), process.env.NEXT_PUBLIC_META_PIXEL_ID ?? ""]
+    .map((id) => id.trim())
+    .filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
+}
+
 function injectScript(id: string, src: string): void {
   if (!isBrowser() || document.getElementById(id)) return;
   const script = document.createElement("script");
@@ -161,21 +168,30 @@ export function initializeTrackingProviders(): void {
   const win = trackingWindow();
   if (!win) return;
 
-  const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
-  if (metaPixelId && !win.fbq) {
-    // Snippet oficial do Meta Pixel (fila até o fbevents.js carregar).
-    const fbq: NonNullable<TrackingWindow["fbq"]> = function (...args: unknown[]) {
-      if (fbq.callMethod) fbq.callMethod(...args);
-      else fbq.queue?.push(args);
-    };
-    if (!win._fbq) win._fbq = fbq;
-    fbq.queue = [];
-    fbq.loaded = true;
-    fbq.version = "2.0";
-    win.fbq = fbq;
-    injectScript("stpt-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
-    win.fbq("init", metaPixelId);
-    // O PageView é disparado por quem chama track("PageView"), para evitar duplicação.
+  const metaPixelIds = configuredMetaPixelIds();
+
+  if (metaPixelIds.length > 0) {
+    if (!win.fbq) {
+      // Snippet oficial do Meta Pixel (fila até o fbevents.js carregar).
+      const fbq: NonNullable<TrackingWindow["fbq"]> = function (...args: unknown[]) {
+        if (fbq.callMethod) fbq.callMethod(...args);
+        else fbq.queue?.push(args);
+      };
+      if (!win._fbq) win._fbq = fbq;
+      fbq.queue = [];
+      fbq.loaded = true;
+      fbq.version = "2.0";
+      win.fbq = fbq;
+      injectScript("stpt-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
+    }
+
+    const initializedIds = win._stptMetaPixelIds ?? (win._stptMetaPixelIds = new Set<string>());
+    for (const pixelId of metaPixelIds) {
+      if (initializedIds.has(pixelId)) continue;
+      win.fbq("init", pixelId);
+      initializedIds.add(pixelId);
+    }
+    // PageView continua sendo disparado por track("PageView"), sem duplicação.
   }
 
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
@@ -224,12 +240,15 @@ export function track(event: TrackingEvent, payload: TrackingPayload = {}, opts:
   win.dataLayer = win.dataLayer ?? [];
   win.dataLayer.push({ event, ...cleanPayload });
 
-  const fbOptions = opts.eventId ? { eventID: opts.eventId } : undefined;
   const standard: TrackingEvent[] = ["PageView", "ViewContent", "AddToCart", "InitiateCheckout", "AddPaymentInfo", "Purchase"];
-  if (standard.includes(event)) {
-    win.fbq?.("track", event, cleanPayload, fbOptions);
-  } else {
-    win.fbq?.("trackCustom", event, cleanPayload);
+  const fbOptions = opts.eventId ? { eventID: opts.eventId } : undefined;
+  const metaPixelIds = win._stptMetaPixelIds ?? configuredMetaPixelIds();
+  for (const pixelId of metaPixelIds) {
+    if (standard.includes(event)) {
+      win.fbq?.("trackSingle", pixelId, event, cleanPayload, fbOptions);
+    } else {
+      win.fbq?.("trackSingleCustom", pixelId, event, cleanPayload, fbOptions);
+    }
   }
 
   win.gtag?.("event", event, cleanPayload);

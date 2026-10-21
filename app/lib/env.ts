@@ -34,7 +34,7 @@ export function envHealth(): EnvCheck[] {
     { key: "BRAVOPAY_API_KEY", ok: has("BRAVOPAY_API_KEY") || bravopayMode() === "mock", required: true, hint: "Chave da API BravoPay (PIX)" },
     { key: "BRAVOPAY_WEBHOOK_SECRET", ok: has("BRAVOPAY_WEBHOOK_SECRET"), required: true, hint: "Segredo do webhook BravoPay" },
     { key: "BRAVOPAY_PRODUCT_ID", ok: has("BRAVOPAY_PRODUCT_ID"), required: false, hint: "ID do produto BravoPay (atribuição)" },
-    { key: "NEXT_PUBLIC_META_PIXEL_ID", ok: has("NEXT_PUBLIC_META_PIXEL_ID"), required: false, hint: "Meta Pixel (navegador)" },
-    { key: "META_CAPI_TOKENS", ok: has("META_CAPI_TOKENS") || has("META_ACCESS_TOKEN"), required: false, hint: "Meta Conversions API — pixelId:token (ou META_ACCESS_TOKEN)" },
+    { key: "NEXT_PUBLIC_META_PIXEL_ID / NEXT_PUBLIC_META_PIXEL_IDS", ok: has("NEXT_PUBLIC_META_PIXEL_ID") || has("NEXT_PUBLIC_META_PIXEL_IDS"), required: false, hint: "Meta Pixel(s) (navegador)" },
+    { key: "META_CAPI_TOKENS / META_CAPI_TOKENS_ADDITIONAL", ok: has("META_CAPI_TOKENS") || has("META_CAPI_TOKENS_ADDITIONAL") || has("META_ACCESS_TOKEN"), required: false, hint: "Meta Conversions API — pixelId:token (ou META_ACCESS_TOKEN)" },
   ];
 }
