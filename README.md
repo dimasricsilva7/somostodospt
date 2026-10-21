@@ -88,8 +88,8 @@ Veja `.env.example`. Nenhum segredo em `NEXT_PUBLIC_*`.
 | `BRAVOPAY_WEBHOOK_SECRET` | Sim (prod) | Validar o webhook |
 | `BRAVOPAY_MODE=mock` | Não | PIX fictício para testar o fluxo (bloqueado em produção) |
 | `BRAVOPAY_PRODUCT_ID` | Não | Atribuição no painel BravoPay |
-| `NEXT_PUBLIC_META_PIXEL_ID` | Não | Meta Pixel (navegador) |
-| `META_CAPI_TOKENS` ou `META_ACCESS_TOKEN` | Não | Meta Conversions API (servidor) |
+| `NEXT_PUBLIC_META_PIXEL_ID` / `NEXT_PUBLIC_META_PIXEL_IDS` | Não | Meta Pixel(s) no navegador; IDs adicionais separados por vírgula |
+| `META_CAPI_TOKENS`, `META_CAPI_TOKENS_ADDITIONAL` ou `META_ACCESS_TOKEN` | Não | Meta Conversions API; a variável adicional acrescenta par(es) sem substituir os atuais |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` / `NEXT_PUBLIC_GOOGLE_ADS_*` | Não | Google (opcional) |
 
 ## Pendências para vender de verdade
