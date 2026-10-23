@@ -77,6 +77,21 @@ export const urgency = {
   stockLeft: null as number | null, // apenas se o estoque for realmente esse
 } as const;
 
+/** Tabela de medidas (cm). Aproximada — tolerância ±2 cm. Editável aqui pelo responsável. */
+export const sizeChart = {
+  note: "Medidas aproximadas da peça em centímetros (tolerância ±2 cm). Dica: meça uma camiseta que já te sirva bem e compare.",
+  rows: [
+    { size: "PP", larguraCm: 48, alturaCm: 66 },
+    { size: "P", larguraCm: 50, alturaCm: 70 },
+    { size: "M", larguraCm: 54, alturaCm: 72 },
+    { size: "G", larguraCm: 58, alturaCm: 74 },
+    { size: "GG", larguraCm: 62, alturaCm: 76 },
+    { size: "XG", larguraCm: 66, alturaCm: 78 },
+    { size: "XXG", larguraCm: 70, alturaCm: 80 },
+    { size: "XXXG", larguraCm: 74, alturaCm: 82 },
+  ],
+} as const;
+
 export type Review = {
   name: string;
   rating: number; // 1..5

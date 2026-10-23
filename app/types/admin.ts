@@ -39,6 +39,13 @@ export type ModelRank = {
   paidRevenueCents: number;
 };
 
+export type StateRank = {
+  state: string;
+  generatedOrders: number;
+  paidOrders: number;
+  paidRevenueCents: number;
+};
+
 export type DashboardPeriod = "today" | "yesterday" | "7d" | "30d" | "all";
 
 export type DashboardData = {
@@ -48,5 +55,6 @@ export type DashboardData = {
   abandoned: AbandonedLead[];
   online: { count: number; rows: OnlineRow[] };
   models: ModelRank[];
+  states: StateRank[];
   ok: boolean;
 };

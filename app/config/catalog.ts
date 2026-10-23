@@ -29,6 +29,8 @@ export type CatalogProduct = {
   active: boolean;
   /** Destaque "Mais vendido" no card (curadoria manual pelo painel). */
   bestSeller?: boolean;
+  /** Unidades restantes em estoque. Quando definido, exibe "Restam apenas X unidades". */
+  stockLeft?: number | null;
   /** Arquivo de arte que falta para ativar o modelo (02–06). */
   neededImage?: string;
 };

@@ -101,6 +101,7 @@ function applyOverride(base: CatalogProduct, o: Awaited<ReturnType<typeof db.pro
     sizes: Array.isArray(o.sizes) ? (o.sizes as string[]) : base.sizes,
     active: typeof o.active === "boolean" ? o.active : base.active,
     bestSeller: typeof o.bestSeller === "boolean" ? o.bestSeller : base.bestSeller,
+    stockLeft: o.stockLeft ?? base.stockLeft ?? null,
     media,
   };
 }
@@ -125,6 +126,7 @@ function customToCatalog(c: Awaited<ReturnType<typeof db.customProduct.findMany>
     media,
     active: c.active,
     bestSeller: c.bestSeller,
+    stockLeft: c.stockLeft ?? null,
   };
 }
 
@@ -199,6 +201,7 @@ export async function createCustomProduct(name: string, edit: ProductEdit): Prom
       sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
       active: edit.active ?? false,
       bestSeller: edit.bestSeller ?? false,
+      stockLeft: edit.stockLeft ?? null,
       mainImageId: edit.mainImageId ?? null,
       galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     },
@@ -217,6 +220,7 @@ export async function saveCustomProduct(slug: string, edit: ProductEdit & { name
       sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
       active: edit.active ?? false,
       bestSeller: edit.bestSeller ?? false,
+      stockLeft: edit.stockLeft ?? null,
       mainImageId: edit.mainImageId ?? null,
       galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     },
@@ -240,6 +244,7 @@ export type ProductEdit = {
   sizes?: string[];
   active?: boolean;
   bestSeller?: boolean;
+  stockLeft?: number | null;
   mainImageId?: string | null;
   galleryIds?: string[];
   sortOrder?: number;
@@ -262,6 +267,7 @@ export async function saveProductContent(slug: string, edit: ProductEdit): Promi
     sizes: (edit.sizes ?? undefined) as Prisma.InputJsonValue | undefined,
     active: edit.active ?? null,
     bestSeller: edit.bestSeller ?? null,
+    stockLeft: edit.stockLeft ?? null,
     mainImageId: edit.mainImageId ?? null,
     galleryIds: (edit.galleryIds ?? undefined) as Prisma.InputJsonValue | undefined,
     sortOrder: edit.sortOrder ?? null,

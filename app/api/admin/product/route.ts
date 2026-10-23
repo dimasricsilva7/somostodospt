@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     sizes: Array.isArray(body.sizes) ? body.sizes.map((s) => String(s).toUpperCase()).filter((s) => ALLOWED.has(s)) : undefined,
     active: typeof body.active === "boolean" ? body.active : undefined,
     bestSeller: typeof body.bestSeller === "boolean" ? body.bestSeller : undefined,
+    stockLeft: Number.isFinite(body.stockLeft) ? Math.max(0, Math.round(body.stockLeft as number)) : null,
     mainImageId: typeof body.mainImageId === "string" ? body.mainImageId : body.mainImageId === null ? null : undefined,
     galleryIds: Array.isArray(body.galleryIds) ? body.galleryIds.map(String).slice(0, 8) : undefined,
     sortOrder: Number.isFinite(body.sortOrder) ? Math.round(body.sortOrder as number) : undefined,

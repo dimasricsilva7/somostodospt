@@ -3,9 +3,38 @@ import { db } from "@/app/lib/db";
 import { listOrders } from "@/app/server/admin-orders";
 import { listAbandoned } from "@/app/server/leads";
 import { onlineNow } from "@/app/server/sessions";
-import type { DashboardData, DashboardPeriod, ModelRank } from "@/app/types/admin";
+import type { DashboardData, DashboardPeriod, ModelRank, StateRank } from "@/app/types/admin";
 
 const PAID = "PAID";
+
+/** Ranking de estados (UF) por pedidos gerados × pagos, pelo endereço de entrega. */
+async function rankStates(createdAt: { gte?: Date; lt?: Date } | undefined): Promise<StateRank[]> {
+  try {
+    const orders = await db.order.findMany({
+      where: createdAt ? { createdAt } : {},
+      select: { shippingAddress: true, status: true, totalCents: true },
+    });
+    const map = new Map<string, StateRank>();
+    for (const o of orders) {
+      const addr = (o.shippingAddress ?? {}) as { state?: string };
+      const uf = (addr.state ?? "").toString().trim().toUpperCase();
+      if (!uf) continue;
+      let m = map.get(uf);
+      if (!m) {
+        m = { state: uf, generatedOrders: 0, paidOrders: 0, paidRevenueCents: 0 };
+        map.set(uf, m);
+      }
+      m.generatedOrders += 1;
+      if (o.status === PAID) {
+        m.paidOrders += 1;
+        m.paidRevenueCents += o.totalCents ?? 0;
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.paidOrders - a.paidOrders || b.generatedOrders - a.generatedOrders);
+  } catch {
+    return [];
+  }
+}
 
 /** Ranking de modelos por unidades geradas × pagas (exclui order bumps). */
 async function rankModels(createdAt: { gte?: Date; lt?: Date } | undefined): Promise<ModelRank[]> {
@@ -87,7 +116,7 @@ export async function getDashboardData(period: DashboardPeriod = "today"): Promi
   const createdAt = range.since || range.until ? { ...(range.since ? { gte: range.since } : {}), ...(range.until ? { lt: range.until } : {}) } : undefined;
   const whereInPeriod = createdAt ? { createdAt } : {};
 
-  const [orders, abandoned, online, revenue, counts, models] = await Promise.all([
+  const [orders, abandoned, online, revenue, counts, models, states] = await Promise.all([
     listOrders({ since: range.since, until: range.until }),
     listAbandoned(),
     onlineNow(),
@@ -105,6 +134,7 @@ export async function getDashboardData(period: DashboardPeriod = "today"): Promi
       }
     })(),
     rankModels(createdAt),
+    rankStates(createdAt),
   ]);
 
   return {
@@ -114,6 +144,7 @@ export async function getDashboardData(period: DashboardPeriod = "today"): Promi
     abandoned: abandoned.rows,
     online: { count: online.count, rows: online.rows },
     models,
+    states,
     ok: counts.ok && orders.ok,
   };
 }

@@ -49,6 +49,9 @@ export function CatalogCard({ product }: { product: CatalogProduct }) {
         )}
         {!sellable && <span className="catalog-card__badge">Em breve</span>}
         {sellable && product.bestSeller && <span className="catalog-card__badge catalog-card__badge--best">⭐ Mais vendido</span>}
+        {sellable && typeof product.stockLeft === "number" && product.stockLeft > 0 && (
+          <span className="catalog-card__stock">🔥 Restam apenas {product.stockLeft} unidades</span>
+        )}
       </div>
 
       <div className="catalog-card__body">
@@ -64,6 +67,10 @@ export function CatalogCard({ product }: { product: CatalogProduct }) {
 
         {sellable ? (
           <>
+            <div className="catalog-card__sizes-head">
+              <span className="catalog-card__sizes-label">Tamanho</span>
+              <button type="button" className="catalog-card__sizelink" onClick={() => window.dispatchEvent(new Event("stpt-open-sizechart"))}>📏 Tabela de medidas</button>
+            </div>
             <div className="catalog-card__sizes" role="group" aria-label={`Tamanho — ${product.name}`}>
               {product.sizes.map((s) => (
                 <button key={s} type="button" className={`size-button size-button--sm${size === s ? " is-selected" : ""}`} onClick={() => selectSize(s)} aria-pressed={size === s}>

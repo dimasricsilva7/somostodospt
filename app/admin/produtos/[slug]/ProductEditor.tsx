@@ -11,6 +11,7 @@ type Initial = {
   sizes: string[];
   active: boolean;
   bestSeller: boolean;
+  stockLeft: string;
   mainImageId: string | null;
   currentImage: string | null;
 };
@@ -30,6 +31,7 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
   const [sizes, setSizes] = useState<string[]>(initial.sizes);
   const [active, setActive] = useState(initial.active);
   const [bestSeller, setBestSeller] = useState(initial.bestSeller);
+  const [stockLeft, setStockLeft] = useState(initial.stockLeft);
   const [mainImageId, setMainImageId] = useState<string | null>(initial.mainImageId);
   const [preview, setPreview] = useState<string | null>(initial.currentImage);
   const [uploading, setUploading] = useState(false);
@@ -80,6 +82,7 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
           sizes,
           active,
           bestSeller,
+          stockLeft: stockLeft.trim() === "" ? null : Number(stockLeft),
           mainImageId,
         }),
       });
@@ -137,6 +140,11 @@ export function ProductEditor({ slug, allSizes, initial }: { slug: string; allSi
       <label className="admin-check">
         <input type="checkbox" checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />
         <span>⭐ Destacar como <strong>Mais vendido</strong> (mostra o selo no card da loja).</span>
+      </label>
+
+      <label className="admin-field">
+        <span>🔥 Unidades restantes (estoque) — mostra “Restam apenas X unidades” no card. Vazio = não mostra.</span>
+        <input inputMode="numeric" value={stockLeft} onChange={(e) => setStockLeft(e.target.value.replace(/[^0-9]/g, ""))} placeholder="ex.: 7" />
       </label>
 
       {msg && <p className={msg.type === "ok" ? "admin-ok" : "admin-error"}>{msg.text}</p>}

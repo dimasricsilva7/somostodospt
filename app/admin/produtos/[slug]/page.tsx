@@ -33,6 +33,7 @@ export default async function AdminProductPage({ params }: { params: Promise<{ s
           sizes: p.sizes,
           active: p.active,
           bestSeller: p.bestSeller ?? false,
+          stockLeft: p.stockLeft != null ? String(p.stockLeft) : "",
           mainImageId: override?.mainImageId ?? custom?.mainImageId ?? null,
           currentImage: p.media[0]?.src ?? null,
         }}

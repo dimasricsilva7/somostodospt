@@ -15,6 +15,7 @@ import { Faq } from "./Faq";
 import { ProductMedia } from "./ProductMedia";
 import { Reviews } from "./Reviews";
 import { ScrollReveal } from "./ScrollReveal";
+import { SizeChartModal } from "./SizeChartModal";
 import { UrgencyBar } from "./UrgencyBar";
 
 function scrollToCollection() {
@@ -173,6 +174,7 @@ export function StorefrontExperience({ products, texts, sectionImages }: { produ
       <CartDrawer products={products} />
       <ScrollReveal />
       <DeliveryModal />
+      <SizeChartModal />
       <CookieConsent />
     </>
   );

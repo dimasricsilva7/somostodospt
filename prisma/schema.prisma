@@ -225,6 +225,7 @@ model ProductContent {
   galleryIds          Json?
   sortOrder           Int?
   bestSeller          Boolean?
+  stockLeft           Int?
   updatedAt           DateTime @updatedAt
 }
 
@@ -268,6 +269,7 @@ model CustomProduct {
   galleryIds          Json?
   sortOrder           Int      @default(100)
   bestSeller          Boolean  @default(false)
+  stockLeft           Int?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

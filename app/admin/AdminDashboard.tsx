@@ -19,7 +19,7 @@ const PERIODS: { key: DashboardPeriod; label: string }[] = [
   { key: "all", label: "Tudo" },
 ];
 
-type Tab = "pedidos" | "online" | "abandonados" | "ranking" | "modelos";
+type Tab = "pedidos" | "online" | "abandonados" | "ranking" | "estados" | "modelos";
 
 const money = (c: number) => formatPrice(c) ?? "—";
 const FULFILL: Record<string, string> = { PENDING: "A preparar", PROCESSING: "Separando", SHIPPED: "Enviado", DELIVERED: "Entregue" };
@@ -164,6 +164,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
 
   const { stats, orders, abandoned, online } = data;
   const models = data.models ?? [];
+  const states = data.states ?? [];
 
   return (
     <>
@@ -185,6 +186,7 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
         <button role="tab" aria-selected={tab === "online"} className={tab === "online" ? "is-active" : ""} onClick={() => setTab("online")}>Online ao vivo ({online.count})</button>
         <button role="tab" aria-selected={tab === "abandonados"} className={tab === "abandonados" ? "is-active" : ""} onClick={() => setTab("abandonados")}>Abandonados ({abandoned.length})</button>
         <button role="tab" aria-selected={tab === "ranking"} className={tab === "ranking" ? "is-active" : ""} onClick={() => setTab("ranking")}>Mais vendidos</button>
+        <button role="tab" aria-selected={tab === "estados"} className={tab === "estados" ? "is-active" : ""} onClick={() => setTab("estados")}>Estados</button>
         <button role="tab" aria-selected={tab === "modelos"} className={tab === "modelos" ? "is-active" : ""} onClick={() => setTab("modelos")}>Modelos</button>
       </div>
 
@@ -284,6 +286,31 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
                       <td><strong>{m.paidUnits}</strong> <small className="admin-muted">({m.paidOrders} ped.)</small></td>
                       <td>{conv}%</td>
                       <td>{money(m.paidRevenueCents)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {tab === "estados" && (
+        <div className="admin-table-wrap">
+          {states.length === 0 ? <p className="admin-pad admin-muted">Nenhum pedido com estado no período.</p> : (
+            <table className="admin-table">
+              <thead><tr><th>#</th><th>Estado (UF)</th><th>Gerados</th><th>Pagos</th><th>Conversão</th><th>Receita paga</th></tr></thead>
+              <tbody>
+                {states.map((s, i) => {
+                  const conv = s.generatedOrders > 0 ? Math.round((s.paidOrders / s.generatedOrders) * 100) : 0;
+                  return (
+                    <tr key={s.state}>
+                      <td>{i + 1}</td>
+                      <td><strong>{s.state}</strong></td>
+                      <td>{s.generatedOrders}</td>
+                      <td><strong>{s.paidOrders}</strong></td>
+                      <td>{conv}%</td>
+                      <td>{money(s.paidRevenueCents)}</td>
                     </tr>
                   );
                 })}

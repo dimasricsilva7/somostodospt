@@ -18,6 +18,7 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
   const [sizes, setSizes] = useState<string[]>([...allSizes]);
   const [active, setActive] = useState(true);
   const [bestSeller, setBestSeller] = useState(false);
+  const [stockLeft, setStockLeft] = useState("");
   const [mainImageId, setMainImageId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,7 +59,7 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
       const res = await fetch("/api/admin/product-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, priceCents: reaisToCents(priceReais), compareAtPriceCents: reaisToCents(compareReais), sizes, active, bestSeller, mainImageId }),
+        body: JSON.stringify({ name, description, priceCents: reaisToCents(priceReais), compareAtPriceCents: reaisToCents(compareReais), sizes, active, bestSeller, stockLeft: stockLeft.trim() === "" ? null : Number(stockLeft), mainImageId }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; slug?: string; error?: string };
       if (res.ok && data.slug) {
@@ -113,6 +114,11 @@ export function NewProductForm({ allSizes }: { allSizes: string[] }) {
       <label className="admin-check">
         <input type="checkbox" checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />
         <span>⭐ Destacar como <strong>Mais vendido</strong> (selo no card da loja).</span>
+      </label>
+
+      <label className="admin-field">
+        <span>🔥 Unidades restantes (estoque) — mostra “Restam apenas X unidades”. Vazio = não mostra.</span>
+        <input inputMode="numeric" value={stockLeft} onChange={(e) => setStockLeft(e.target.value.replace(/[^0-9]/g, ""))} placeholder="ex.: 7" />
       </label>
 
       {msg && <p className={msg.type === "ok" ? "admin-ok" : "admin-error"}>{msg.text}</p>}

@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     sizes: Array.isArray(body?.sizes) ? body!.sizes!.map((s) => String(s).toUpperCase()).filter((s) => ALLOWED.has(s)) : undefined,
     active: typeof body?.active === "boolean" ? body!.active : false,
     bestSeller: typeof body?.bestSeller === "boolean" ? body!.bestSeller : false,
+    stockLeft: Number.isFinite(body?.stockLeft) ? Math.max(0, Math.round(body!.stockLeft as number)) : null,
     mainImageId: typeof body?.mainImageId === "string" ? body!.mainImageId : null,
   };
 
