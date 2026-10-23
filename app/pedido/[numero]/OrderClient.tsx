@@ -2,13 +2,12 @@
 
 import { Check, Copy, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnnounceBar } from "@/app/components/AnnounceBar";
 import { Heartbeat } from "@/app/components/Heartbeat";
 import { BrandMark } from "@/app/components/BrandMark";
 import { formatPrice } from "@/app/config/product";
 import { PIX_EXPIRATION_MINUTES } from "@/app/config/commerce";
-import { track } from "@/app/lib/tracking";
 import type { PublicOrder } from "@/app/types/order";
 
 type ApiResponse = { order: PublicOrder; qr: string | null };
@@ -25,7 +24,6 @@ export function OrderClient({ orderNumber, token, processorName, announcementTex
   const [copied, setCopied] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
-  const purchaseFired = useRef(false);
 
   const qs = `order=${encodeURIComponent(orderNumber)}&token=${encodeURIComponent(token)}`;
 
@@ -69,13 +67,9 @@ export function OrderClient({ orderNumber, token, processorName, announcementTex
     return () => clearInterval(id);
   }, [order?.pixExpiresAt]);
 
-  // Purchase (navegador) com o event_id do servidor → deduplicação com o CAPI
-  useEffect(() => {
-    if (order?.status === "PAID" && order.metaEventId && !purchaseFired.current) {
-      purchaseFired.current = true;
-      track("Purchase", { value: (order.totalCents ?? 0) / 100, currency: order.currency, content_name: order.productName, order_id: order.orderNumber, num_items: order.quantity }, { eventId: order.metaEventId, once: true });
-    }
-  }, [order]);
+  // Purchase é enviado APENAS pelo CAPI (servidor), de forma idempotente
+  // (protegido por purchaseTrackedAt): exatamente 1 por pedido pago. Evita a
+  // dupla contagem navegador+CAPI que estava aparecendo no gerenciador.
 
   async function copy() {
     if (!order?.pixCopyPaste) return;
