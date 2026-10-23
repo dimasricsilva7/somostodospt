@@ -382,6 +382,16 @@ export async function applyPaymentSnapshot(
  * Venda confirmada (PIX pago): evento Meta Purchase (CAPI).
  * Protegido contra execução dupla por purchaseTrackedAt.
  */
+/**
+ * Pedidos que são SÓ taxa/encargos (ex.: "Encargos Sobre o Produto", R$9,90)
+ * NÃO são venda de camiseta e não devem disparar Purchase (poluem o pixel/ROAS).
+ */
+const FEE_PATTERN = /encargo|taxa|tarifa/i;
+function isRealSale(items: { productName: string; productSlug: string }[], fallbackName?: string | null, fallbackSlug?: string | null): boolean {
+  const list = items.length ? items : [{ productName: fallbackName ?? "", productSlug: fallbackSlug ?? "" }];
+  return list.some((it) => !FEE_PATTERN.test(`${it.productName} ${it.productSlug}`));
+}
+
 type MetaItem = { sku: string; quantity: number; unitPriceCents: number };
 function metaContents(order: MetaItem, items: MetaItem[]) {
   const list = items.length ? items : [{ sku: order.sku, quantity: order.quantity, unitPriceCents: order.unitPriceCents }];
@@ -400,6 +410,10 @@ async function onConfirmed(orderId: string) {
   await emailOrderPaid(order.id).catch(() => {}); // compra aprovada (transacional, independe de consentimento de marketing)
 
   if (!order.adsConsent) return; // sem consentimento de marketing: nada vai para a Meta
+  if (!isRealSale(order.items, order.productName, order.productSlug)) {
+    await logOrderEvent(order.id, "meta_purchase_skipped", "Purchase NÃO enviado ao Meta: pedido só de taxa/encargos (não é venda de camiseta).").catch(() => {});
+    return;
+  }
   const value = order.paidAmountCents ?? order.totalCents;
   const address = (order.shippingAddress ?? {}) as { city?: string; state?: string; cep?: string };
   const [firstName, ...rest] = order.customer.name.split(/\s+/);
@@ -543,6 +557,7 @@ export async function resendMetaPurchase(orderId: string): Promise<{ sent: boole
   const order = await db.order.findUnique({ where: { id: orderId }, include: { customer: true, items: true } });
   if (!order) return { sent: false, reason: "not_found" };
   if (order.status !== "PAID") return { sent: false, reason: "not_paid" };
+  if (!isRealSale(order.items, order.productName, order.productSlug)) return { sent: false, reason: "fee_only" };
 
   const value = order.paidAmountCents ?? order.totalCents;
   const address = (order.shippingAddress ?? {}) as { city?: string; state?: string; cep?: string };
