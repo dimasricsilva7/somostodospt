@@ -19,7 +19,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     .map((p) => {
       const price = productPriceCents(p);
       if (!p.active || p.media.length === 0 || price === undefined) return null;
-      return { slug: p.slug, name: p.name, priceInCents: price, compareAtPriceInCents: p.compareAtPriceInCents, sizes: p.sizes, media: p.media[0] };
+      return { slug: p.slug, name: p.name, priceInCents: price, compareAtPriceInCents: p.compareAtPriceInCents, sizes: p.sizes, media: p.media[0], stockLeft: p.stockLeft ?? null };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 

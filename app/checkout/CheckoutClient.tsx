@@ -14,7 +14,7 @@ import { maskCep, maskCpf, maskPhone, onlyDigits } from "@/app/lib/validators";
 import { buildClientContext, getConsentChoice, newEventId, track } from "@/app/lib/tracking";
 import { addItem, clearCart, removeItem, updateQty, useCart } from "@/app/lib/cart";
 
-type CheckoutProduct = { slug: string; name: string; priceInCents: number; compareAtPriceInCents?: number; sizes: string[]; media: ProductMediaType };
+type CheckoutProduct = { slug: string; name: string; priceInCents: number; compareAtPriceInCents?: number; sizes: string[]; media: ProductMediaType; stockLeft?: number | null };
 type Bump = { id: string; title: string; description: string | null; priceCents: number; compareAtPriceCents: number | null; imageUrl: string | null };
 type Fields = Record<string, string>;
 
@@ -41,9 +41,15 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
     .map((i) => {
       const p = bySlug.get(i.slug);
       if (!p || !p.sizes.includes(i.size)) return null;
-      return { slug: i.slug, size: i.size, qty: i.qty, name: p.name, price: p.priceInCents, media: p.media };
+      return { slug: i.slug, size: i.size, qty: i.qty, name: p.name, price: p.priceInCents, media: p.media, stockLeft: p.stockLeft ?? null };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  // Menor estoque entre os itens do carrinho (aviso de escassez no topo).
+  const stockLeft = lines.reduce<number | null>((min, l) => {
+    if (typeof l.stockLeft !== "number" || l.stockLeft <= 0) return min;
+    return min === null ? l.stockLeft : Math.min(min, l.stockLeft);
+  }, null);
 
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
@@ -184,7 +190,12 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
         <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>
       </header>
 
-      <ReserveTimer />
+      {stockLeft !== null && (
+        <div className="checkout-reserve" role="status">
+          <span className="checkout-reserve__dot" aria-hidden="true" />
+          <span>🔥 Restam apenas <strong>{stockLeft} unidades</strong> em estoque</span>
+        </div>
+      )}
 
       <div className="checkout-grid">
         <form className="checkout-form" onSubmit={submit} noValidate>
@@ -322,24 +333,6 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
           </div>
         </aside>
       </div>
-    </div>
-  );
-}
-
-/** Contador de reserva da oferta (frete grátis) — nudge de urgência no topo do checkout. */
-function ReserveTimer() {
-  const [left, setLeft] = useState(15 * 60);
-  useEffect(() => {
-    const id = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-  return (
-    <div className="checkout-reserve" role="status">
-      <span className="checkout-reserve__dot" aria-hidden="true" />
-      <span>Oferta com <strong>frete grátis</strong> reservada por</span>
-      <strong className="checkout-reserve__clock">{mm}:{ss}</strong>
     </div>
   );
 }
