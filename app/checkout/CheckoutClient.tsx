@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Loader2, Lock, Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Loader2, Lock, Minus, Plus, ShieldCheck, Trash2, Truck, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
@@ -184,6 +184,8 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
         <span className="checkout-top__secure"><Lock size={14} aria-hidden="true" /> Checkout seguro</span>
       </header>
 
+      <ReserveTimer />
+
       <div className="checkout-grid">
         <form className="checkout-form" onSubmit={submit} noValidate>
           <Link href="/" className="text-link checkout-back"><ArrowLeft size={15} aria-hidden="true" /> Continuar comprando</Link>
@@ -277,6 +279,7 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
           <button type="submit" className="button button--large pay-button" disabled={submitting}>
             {submitting ? <><Loader2 size={18} className="spin" aria-hidden="true" /> GERANDO PIX…</> : <>PAGAR {money(total)} COM PIX</>}
           </button>
+          <TrustSeals />
           <p className="secure-note"><ShieldCheck size={14} aria-hidden="true" /> Seus dados são usados apenas para o pedido e a entrega. O pagamento é processado por PIX.</p>
         </form>
 
@@ -308,12 +311,47 @@ export function CheckoutClient({ products, bumps = [], processorName, announceme
             <div><dt>Subtotal</dt><dd>{money(subtotal)}</dd></div>
             {discount > 0 && <div className="cart-totals__disc"><dt>Desconto</dt><dd>-{money(discount)}</dd></div>}
             {bumpsTotal > 0 && <div><dt>Adicionais</dt><dd>{money(bumpsTotal)}</dd></div>}
-            <div><dt>Frete</dt><dd>{shipping.mode === "free" ? "Grátis" : money(shippingCents)}</dd></div>
+            <div><dt>Frete</dt><dd className="summary-free">{shipping.mode === "free" ? "Grátis" : money(shippingCents)}</dd></div>
             <div className="summary-total"><dt>Total</dt><dd>{money(total)}</dd></div>
           </dl>
-          <p className="summary-note">{shipping.mode === "free" ? shipping.label : ""}</p>
+          <p className="summary-eta"><Truck size={15} aria-hidden="true" /> <span><strong>Entrega FULL</strong> — compre hoje e receba amanhã, frete grátis.</span></p>
+          <div className="summary-seals">
+            <span><ShieldCheck size={14} aria-hidden="true" /> Pagamento 100% seguro</span>
+            <span><Lock size={14} aria-hidden="true" /> Ambiente SSL 256-bit</span>
+            <span><BadgeCheck size={14} aria-hidden="true" /> Garantia de 7 dias</span>
+          </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+/** Contador de reserva da oferta (frete grátis) — nudge de urgência no topo do checkout. */
+function ReserveTimer() {
+  const [left, setLeft] = useState(15 * 60);
+  useEffect(() => {
+    const id = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const mm = String(Math.floor(left / 60)).padStart(2, "0");
+  const ss = String(left % 60).padStart(2, "0");
+  return (
+    <div className="checkout-reserve" role="status">
+      <span className="checkout-reserve__dot" aria-hidden="true" />
+      <span>Oferta com <strong>frete grátis</strong> reservada por</span>
+      <strong className="checkout-reserve__clock">{mm}:{ss}</strong>
+    </div>
+  );
+}
+
+/** Selos de confiança abaixo do botão de pagamento. */
+function TrustSeals() {
+  return (
+    <div className="trust-seals" aria-label="Garantias">
+      <div><ShieldCheck size={20} aria-hidden="true" /><span>Pagamento<br />100% seguro</span></div>
+      <div><Lock size={20} aria-hidden="true" /><span>Ambiente<br />SSL 256-bit</span></div>
+      <div><BadgeCheck size={20} aria-hidden="true" /><span>Garantia de<br />7 dias</span></div>
+      <div><Zap size={20} aria-hidden="true" /><span>Confirmação<br />automática</span></div>
     </div>
   );
 }

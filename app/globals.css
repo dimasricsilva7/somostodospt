@@ -347,6 +347,23 @@ p { line-height: 1.6; }
 .sizechart-table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: #666; }
 .sizechart-note { margin: 14px 0 0; font-size: .8rem; color: #666; line-height: 1.5; }
 @keyframes stpt-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Checkout — urgência + confiança */
+.checkout-reserve { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; max-width: 1040px; margin: 14px auto 0; padding: 10px 16px; border-radius: 12px; background: #fff4e5; color: #9a5b00; font-size: .88rem; font-weight: 700; }
+.checkout-reserve__dot { width: 9px; height: 9px; border-radius: 50%; background: #e8590c; animation: stpt-pulse 1.3s ease-in-out infinite; }
+.checkout-reserve__clock { padding: 3px 10px; border-radius: 999px; background: #e8590c; color: #fff; font-variant-numeric: tabular-nums; }
+
+.trust-seals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 4px; }
+.trust-seals > div { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px; padding: 12px 6px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .72rem; font-weight: 700; line-height: 1.25; color: #444; }
+.trust-seals svg { color: var(--green); }
+@media (max-width: 560px) { .trust-seals { grid-template-columns: repeat(2, 1fr); } }
+
+.summary-free { color: var(--green); font-weight: 800; }
+.summary-eta { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #e9f7ef; color: #1b7a43; font-size: .82rem; line-height: 1.4; }
+.summary-eta svg { flex: 0 0 auto; margin-top: 1px; }
+.summary-seals { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .78rem; font-weight: 700; color: #555; }
+.summary-seals span { display: inline-flex; align-items: center; gap: 7px; }
+.summary-seals svg { color: var(--green); }
 .catalog-card__body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 18px 18px 20px; }
 .catalog-card__body h3 { margin: 0; font-size: 1.04rem; line-height: 1.2; }
 .catalog-card__price { margin: 0; display: flex; align-items: baseline; gap: 9px; font-family: var(--display); font-size: 1.5rem; letter-spacing: -.03em; color: var(--red-dark); }
