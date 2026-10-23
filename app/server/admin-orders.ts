@@ -87,6 +87,26 @@ export async function getOrderAdmin(orderNumber: string) {
   }
 }
 
+/** Atualiza o status de entrega de vários pedidos de uma vez — apenas pedidos PAGOS (segurança). */
+export async function bulkUpdateFulfillment(orderNumbers: string[], fulfillmentStatus: FulfillmentStatus): Promise<{ updated: number }> {
+  const nums = Array.from(new Set(orderNumbers.map((n) => String(n)).filter(Boolean))).slice(0, 1000);
+  if (nums.length === 0) return { updated: 0 };
+
+  // Só mexe em pedidos pagos.
+  const targets = await db.order.findMany({
+    where: { orderNumber: { in: nums }, status: "PAID" },
+    select: { id: true },
+  });
+  if (targets.length === 0) return { updated: 0 };
+  const ids = targets.map((t) => t.id);
+
+  const res = await db.order.updateMany({ where: { id: { in: ids } }, data: { fulfillmentStatus } });
+  await db.paymentEvent
+    .createMany({ data: ids.map((orderId) => ({ orderId, type: "fulfillment", message: `Entrega: ${fulfillmentStatus} (edição em massa)`, status: fulfillmentStatus })) })
+    .catch(() => {});
+  return { updated: res.count };
+}
+
 export async function updateFulfillment(orderNumber: string, fulfillmentStatus: FulfillmentStatus, trackingCode: string | null) {
   const order = await db.order.update({
     where: { orderNumber },

@@ -364,6 +364,15 @@ p { line-height: 1.6; }
 .summary-seals { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .78rem; font-weight: 700; color: #555; }
 .summary-seals span { display: inline-flex; align-items: center; gap: 7px; }
 .summary-seals svg { color: var(--green); }
+
+/* Edição em massa de pedidos */
+.admin-bulkbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding: 12px 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--mist); font-size: .86rem; }
+.admin-bulkbar__all { display: inline-flex; align-items: center; gap: 7px; font-weight: 800; }
+.admin-bulkbar__all input { width: 16px; height: 16px; accent-color: var(--red); }
+.admin-bulkbar__sep { color: #666; }
+.admin-bulkbar select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; }
+.admin-bulkbar__msg { color: var(--green); font-weight: 700; }
+.admin-table tr.is-selected-row td { background: #fff7e6; }
 .catalog-card__body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 18px 18px 20px; }
 .catalog-card__body h3 { margin: 0; font-size: 1.04rem; line-height: 1.2; }
 .catalog-card__price { margin: 0; display: flex; align-items: baseline; gap: 9px; font-family: var(--display); font-size: 1.5rem; letter-spacing: -.03em; color: var(--red-dark); }

@@ -143,6 +143,10 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
   const [data, setData] = useState<DashboardData>(initial);
   const [tab, setTab] = useState<Tab>("pedidos");
   const [period, setPeriod] = useState<DashboardPeriod>(initial.period ?? "today");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>("SHIPPED");
+  const [applying, setApplying] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<string>();
 
   useEffect(() => {
     let alive = true;
@@ -165,6 +169,47 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
   const { stats, orders, abandoned, online } = data;
   const models = data.models ?? [];
   const states = data.states ?? [];
+
+  // Edição em massa do status de entrega — só pedidos pagos.
+  const paidOrders = orders.filter((o) => o.status === "PAID");
+  const allPaidSelected = paidOrders.length > 0 && paidOrders.every((o) => selected.has(o.orderNumber));
+
+  function toggleOne(num: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(num)) n.delete(num);
+      else n.add(num);
+      return n;
+    });
+  }
+  function toggleAllPaid() {
+    setSelected(() => (allPaidSelected ? new Set() : new Set(paidOrders.map((o) => o.orderNumber))));
+  }
+  async function applyBulk() {
+    if (selected.size === 0 || applying) return;
+    setApplying(true);
+    setBulkMsg(undefined);
+    try {
+      const res = await fetch("/api/admin/orders/bulk-fulfillment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderNumbers: [...selected], status: bulkStatus }),
+      });
+      const resp = (await res.json().catch(() => ({}))) as { updated?: number; error?: string };
+      if (res.ok) {
+        setBulkMsg(`✅ ${resp.updated ?? 0} pedido(s) atualizados para "${FULFILL[bulkStatus] ?? bulkStatus}".`);
+        setSelected(new Set());
+        const r = await fetch(`/api/admin/dashboard?period=${period}`, { cache: "no-store" });
+        if (r.ok) setData(await r.json());
+      } else {
+        setBulkMsg(resp.error ?? "Falha ao atualizar.");
+      }
+    } catch {
+      setBulkMsg("Falha de conexão.");
+    } finally {
+      setApplying(false);
+    }
+  }
 
   return (
     <>
@@ -192,12 +237,29 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
 
       {tab === "pedidos" && (
         <div className="admin-table-wrap">
+          {paidOrders.length > 0 && (
+            <div className="admin-bulkbar">
+              <label className="admin-bulkbar__all">
+                <input type="checkbox" checked={allPaidSelected} onChange={toggleAllPaid} />
+                <span>Selecionar todos os pagos ({paidOrders.length})</span>
+              </label>
+              <span className="admin-bulkbar__sep">Marcar entrega como:</span>
+              <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>
+                {Object.entries(FULFILL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+              <button type="button" className="button button--small" disabled={selected.size === 0 || applying} onClick={applyBulk}>
+                {applying ? "Aplicando…" : `Aplicar a ${selected.size} selecionado(s)`}
+              </button>
+              {bulkMsg && <span className="admin-bulkbar__msg">{bulkMsg}</span>}
+            </div>
+          )}
           {orders.length === 0 ? <p className="admin-pad admin-muted">Nenhum pedido ainda.</p> : (
             <table className="admin-table">
-              <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Contato</th><th>Local</th><th>Produto</th><th>Total</th><th>Pagamento</th><th>Entrega</th><th>Ações</th></tr></thead>
+              <thead><tr><th aria-label="Selecionar"></th><th>Pedido</th><th>Data</th><th>Cliente</th><th>Contato</th><th>Local</th><th>Produto</th><th>Total</th><th>Pagamento</th><th>Entrega</th><th>Ações</th></tr></thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.orderNumber}>
+                  <tr key={o.orderNumber} className={selected.has(o.orderNumber) ? "is-selected-row" : ""}>
+                    <td>{o.status === "PAID" ? <input type="checkbox" checked={selected.has(o.orderNumber)} onChange={() => toggleOne(o.orderNumber)} aria-label={`Selecionar ${o.orderNumber}`} /> : null}</td>
                     <td><Link href={`/admin/pedidos/${o.orderNumber}`} className="admin-link">{o.orderNumber}</Link></td>
                     <td>{dt(o.createdAt)}</td>
                     <td>{o.customerName}</td>
