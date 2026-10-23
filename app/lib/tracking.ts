@@ -147,8 +147,21 @@ export function buildClientContext(adsConsent: boolean) {
   };
 }
 
+/**
+ * Pixels das contas de anúncio (VENDAS 01/02/03). Ficam no código porque o
+ * painel da Vercel deste projeto está em outra conta — IDs de pixel são públicos
+ * (aparecem no navegador de qualquer forma). O token do CAPI NÃO fica aqui:
+ * é segredo e vai na env var META_CAPI_TOKENS (servidor).
+ * Para trocar os pixels depois, edite esta lista ou defina NEXT_PUBLIC_META_PIXEL_IDS.
+ */
+const DEFAULT_META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146"];
+
 function configuredMetaPixelIds(): string[] {
-  return [...(process.env.NEXT_PUBLIC_META_PIXEL_IDS ?? "").split(","), process.env.NEXT_PUBLIC_META_PIXEL_ID ?? ""]
+  return [
+    ...(process.env.NEXT_PUBLIC_META_PIXEL_IDS ?? "").split(","),
+    process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "",
+    ...DEFAULT_META_PIXEL_IDS,
+  ]
     .map((id) => id.trim())
     .filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
 }
