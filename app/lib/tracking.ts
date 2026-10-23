@@ -148,22 +148,16 @@ export function buildClientContext(adsConsent: boolean) {
 }
 
 /**
- * Pixels das contas de anúncio (VENDAS 01/02/03). Ficam no código porque o
- * painel da Vercel deste projeto está em outra conta — IDs de pixel são públicos
- * (aparecem no navegador de qualquer forma). O token do CAPI NÃO fica aqui:
- * é segredo e vai na env var META_CAPI_TOKENS (servidor).
- * Para trocar os pixels depois, edite esta lista ou defina NEXT_PUBLIC_META_PIXEL_IDS.
+ * Pixels ativos no navegador: APENAS as 3 contas VENDAS (01/02/03).
+ * O pixel antigo (COMPRAS/1644…) foi removido a pedido do responsável.
+ * IDs de pixel são públicos (aparecem no navegador), então ficam no código;
+ * o token do CAPI NÃO fica aqui (é segredo → env META_CAPI_TOKENS no servidor).
+ * Para trocar os pixels depois, edite esta lista.
  */
-const DEFAULT_META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146"];
+const META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146"];
 
 function configuredMetaPixelIds(): string[] {
-  return [
-    ...(process.env.NEXT_PUBLIC_META_PIXEL_IDS ?? "").split(","),
-    process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "",
-    ...DEFAULT_META_PIXEL_IDS,
-  ]
-    .map((id) => id.trim())
-    .filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
+  return META_PIXEL_IDS.map((id) => id.trim()).filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
 }
 
 function injectScript(id: string, src: string): void {
