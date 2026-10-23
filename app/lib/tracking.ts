@@ -148,13 +148,13 @@ export function buildClientContext(adsConsent: boolean) {
 }
 
 /**
- * Pixels ativos no navegador: APENAS as 3 contas VENDAS (01/02/03).
- * O pixel antigo (COMPRAS/1644…) foi removido a pedido do responsável.
+ * Pixels ativos no navegador: 3 contas VENDAS (01/02/03) + COMPRAS (1110…).
+ * O pixel antigo COMPRAS/1644… foi removido a pedido do responsável.
  * IDs de pixel são públicos (aparecem no navegador), então ficam no código;
  * o token do CAPI NÃO fica aqui (é segredo → env META_CAPI_TOKENS no servidor).
  * Para trocar os pixels depois, edite esta lista.
  */
-const META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146"];
+const META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146", "1110092494887723"];
 
 function configuredMetaPixelIds(): string[] {
   return META_PIXEL_IDS.map((id) => id.trim()).filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
