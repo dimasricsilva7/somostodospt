@@ -237,6 +237,9 @@ export function AdminDashboard({ initial, products }: { initial: DashboardData; 
 
       {tab === "pedidos" && (
         <div className="admin-table-wrap">
+          <div className="admin-toolbar">
+            <a className="button button--small button--outline" href="/api/admin/export/pagos">⬇️ Baixar clientes pagos (.txt)</a>
+          </div>
           {paidOrders.length > 0 && (
             <div className="admin-bulkbar">
               <label className="admin-bulkbar__all">

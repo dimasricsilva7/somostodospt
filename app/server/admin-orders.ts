@@ -52,6 +52,23 @@ export async function listOrders(opts: { limit?: number; since?: Date; until?: D
   }
 }
 
+/** Todos os pedidos PAGOS com dados completos do cliente — para exportação (.txt). */
+export async function listPaidOrdersForExport() {
+  try {
+    return await db.order.findMany({
+      where: { status: "PAID" },
+      orderBy: { paidAt: "desc" },
+      take: 5000,
+      include: {
+        customer: { select: { email: true, phone: true } },
+        items: { orderBy: { createdAt: "asc" }, select: { productName: true, size: true, quantity: true } },
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
 export type LinkedOrder = { orderNumber: string | null; productName: string; totalCents: number; status: string };
 
 export async function getOrderAdmin(orderNumber: string) {
