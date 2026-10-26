@@ -154,7 +154,7 @@ export function buildClientContext(adsConsent: boolean) {
  * o token do CAPI NÃO fica aqui (é segredo → env META_CAPI_TOKENS no servidor).
  * Para trocar os pixels depois, edite esta lista.
  */
-const META_PIXEL_IDS = ["2545677495939252", "1453520040067694", "1086394057363146", "1110092494887723"];
+const META_PIXEL_IDS = ["2298008410985632", "2545677495939252", "1453520040067694", "1086394057363146", "1110092494887723"];
 
 function configuredMetaPixelIds(): string[] {
   return META_PIXEL_IDS.map((id) => id.trim()).filter((id, index, ids) => id.length > 0 && ids.indexOf(id) === index);
