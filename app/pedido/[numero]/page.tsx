@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BrandMark } from "@/app/components/BrandMark";
 import { getTexts } from "@/app/server/content";
 import { getActiveUpsell } from "@/app/server/offers";
+import { findOrderByAccess } from "@/app/server/orders";
 import { OrderClient } from "./OrderClient";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export default async function OrderPage({
     );
   }
 
-  const [texts, upsell] = await Promise.all([getTexts(), getActiveUpsell()]);
-  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} announcementText={texts.announcementText} upsell={upsell} />;
+  const [texts, upsell, order] = await Promise.all([getTexts(), getActiveUpsell(), findOrderByAccess(decodeURIComponent(numero), t)]);
+  const isDonation = order?.source === "DONATION";
+  return <OrderClient orderNumber={decodeURIComponent(numero)} token={t} processorName={texts.paymentProcessorName} announcementText={texts.announcementText} upsell={isDonation ? null : upsell} isDonation={isDonation} />;
 }

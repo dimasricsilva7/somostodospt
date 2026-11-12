@@ -16,7 +16,7 @@ type Upsell = { id: string; title: string; description: string | null; priceCent
 const money = (c: number) => formatPrice(c) ?? "—";
 const AWAITING = ["PENDING", "PIX_GENERATED"];
 
-export function OrderClient({ orderNumber, token, processorName, announcementText, upsell }: { orderNumber: string; token: string; processorName?: string; announcementText?: string; upsell?: Upsell | null }) {
+export function OrderClient({ orderNumber, token, processorName, announcementText, upsell, isDonation = false }: { orderNumber: string; token: string; processorName?: string; announcementText?: string; upsell?: Upsell | null; isDonation?: boolean }) {
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +111,7 @@ export function OrderClient({ orderNumber, token, processorName, announcementTex
   return (
     <div className="checkout-shell">
       <Heartbeat />
-      <AnnounceBar text={announcementText} />
+      {!isDonation && <AnnounceBar text={announcementText} />}
       <header className="checkout-top">
         <Link href="/" className="brand-mark-link" aria-label="Voltar para a página inicial"><BrandMark compact /></Link>
         <span className="checkout-top__secure">Pedido {orderNumber}</span>
@@ -132,7 +132,7 @@ export function OrderClient({ orderNumber, token, processorName, announcementTex
 
         {order && !loading && (
           <>
-            <OrderSummaryHead order={order} />
+            {!isDonation && <OrderSummaryHead order={order} />}
 
             {AWAITING.includes(order.status) && order.pixCopyPaste && (
               <div className="pix-box">
