@@ -12,7 +12,7 @@ export const PIX_EXPIRATION_MINUTES = 15;
 /** Quantidade máxima por pedido. */
 export const MAX_QUANTITY = 5;
 
-/** Valor sugerido da vaquinha (R$ 13,00). Página /doar. */
+/** Valor sugerido da vaquinha (R$ 13,00). Página /campanha. */
 export const DONATION_CENTS = 1300;
 
 /**
