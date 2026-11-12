@@ -39,7 +39,7 @@ export function DoarForm() {
   }
 
   return (
-    <form className="checkout-form" onSubmit={submit} noValidate>
+    <form className="doar-form" onSubmit={submit} noValidate>
       <label className={`field${errors.name ? " field--error" : ""}`}>
         <span className="field__label">Seu nome</span>
         <input autoComplete="name" value={form.name} onChange={(e) => set("name", e.target.value)} />
