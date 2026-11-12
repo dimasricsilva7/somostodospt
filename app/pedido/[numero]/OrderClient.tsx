@@ -189,7 +189,11 @@ export function OrderClient({ orderNumber, token, processorName, announcementTex
               <div className="order-result order-result--paid">
                 <div className="order-result__icon"><Check size={34} aria-hidden="true" /></div>
                 <h1>Pagamento confirmado!</h1>
-                <p>Obrigado, {order.customerFirstName}. Recebemos o pagamento do pedido <strong>{order.orderNumber}</strong> e já estamos preparando o envio.</p>
+                {order.source === "DONATION" ? (
+                  <p>Muito obrigado pela sua contribuição, {order.customerFirstName}! ✊ Recebemos sua doação de <strong>{money(order.totalCents)}</strong> para a vaquinha. Juntos até o fim.</p>
+                ) : (
+                  <p>Obrigado, {order.customerFirstName}. Recebemos o pagamento do pedido <strong>{order.orderNumber}</strong> e já estamos preparando o envio.</p>
+                )}
               </div>
             )}
 

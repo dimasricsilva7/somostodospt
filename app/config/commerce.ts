@@ -12,6 +12,9 @@ export const PIX_EXPIRATION_MINUTES = 15;
 /** Quantidade máxima por pedido. */
 export const MAX_QUANTITY = 5;
 
+/** Valor sugerido da vaquinha (R$ 13,00). Página /doar. */
+export const DONATION_CENTS = 1300;
+
 /**
  * Frete. `mode`:
  * - "free"  → não cobra frete (R$ 0). Rótulo exibido em `label`.

@@ -15,7 +15,7 @@ import { sellableMerged } from "@/app/server/content";
 import { linkLeadToOrder } from "@/app/server/leads";
 import { emailOrderExpired, emailOrderPaid } from "@/app/server/emails";
 import { getBumpsByIds, getUpsellById } from "@/app/server/offers";
-import { PIX_EXPIRATION_MINUTES, discountCentsFor, shippingCents } from "@/app/config/commerce";
+import { PIX_EXPIRATION_MINUTES, DONATION_CENTS, discountCentsFor, shippingCents } from "@/app/config/commerce";
 import type { CheckoutInput } from "@/app/lib/validation";
 import type { PublicOrder } from "@/app/types/order";
 
@@ -229,6 +229,52 @@ export async function createCheckoutOrder(input: CheckoutInput, meta: RequestMet
   return { order: result, reused: false };
 }
 
+/** Doação avulsa (vaquinha): pedido enxuto sem endereço/carrinho, reaproveita o PIX e a página /pedido. */
+export async function createDonationOrder(input: { name: string; email: string; cpf: string }, meta: RequestMeta) {
+  if (bravopayMode() === "disabled") throw new CheckoutError("O PIX está indisponível no momento. Tente novamente em alguns minutos.", 503);
+
+  if (isProductionDeploy()) {
+    const ipHash = hashIp(meta.ip);
+    const byIp = ipHash ? await db.order.count({ where: { ipHash, createdAt: { gte: new Date(Date.now() - 15 * 60_000) } } }) : 0;
+    if (byIp >= 8) throw new CheckoutError("Você já tem cobranças aguardando pagamento. Conclua uma delas ou aguarde alguns minutos.", 429);
+  }
+
+  const amount = DONATION_CENTS;
+  const customerSnapshot = { name: input.name, email: input.email, cpf: input.cpf };
+  const order = await db.$transaction(async (tx) => {
+    const customer = await tx.customer.upsert({
+      where: { email: input.email },
+      update: { name: input.name, cpf: input.cpf },
+      create: { name: input.name, email: input.email, phone: "", cpf: input.cpf },
+    });
+    const created = await tx.order.create({
+      data: {
+        customerId: customer.id,
+        customerSnapshot,
+        productName: "Doação — Vaquinha do PT",
+        sku: "DOACAO",
+        size: "-",
+        quantity: 1,
+        unitPriceCents: amount,
+        subtotalCents: amount,
+        totalCents: amount,
+        paymentProvider: "bravopay",
+        status: "PENDING",
+        accessToken: randomToken(24),
+        source: "DONATION",
+        userAgent: cut(meta.userAgent, 300),
+        device: deviceFrom(meta.userAgent),
+        ipHash: hashIp(meta.ip),
+      },
+    });
+    const orderNumber = await uniqueOrderNumber(tx, created.seq);
+    return tx.order.update({ where: { id: created.id }, data: { orderNumber, externalReference: orderNumber, metaEventId: `purchase_${created.id}` } });
+  });
+
+  await logOrderEvent(order.id, "order_created", `Doação ${order.orderNumber} criada`, { total: amount });
+  return ensurePix(order.id);
+}
+
 /** Gera o PIX no gateway se o pedido ainda não tiver um. Seguro para chamar de novo. */
 export async function ensurePix(orderId: string): Promise<Order> {
   const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: { customer: true } });
@@ -407,7 +453,7 @@ async function onConfirmed(orderId: string) {
   const tracked = await db.order.updateMany({ where: { id: order.id, purchaseTrackedAt: null }, data: { purchaseTrackedAt: new Date() } });
   if (!tracked.count) return;
 
-  await emailOrderPaid(order.id).catch(() => {}); // compra aprovada (transacional, independe de consentimento de marketing)
+  if (order.source !== "DONATION") await emailOrderPaid(order.id).catch(() => {}); // compra aprovada (transacional); doação não gera e-mail de pedido
 
   if (!order.adsConsent) return; // sem consentimento de marketing: nada vai para a Meta
   if (!isRealSale(order.items, order.productName, order.productSlug)) {
@@ -722,5 +768,6 @@ export function toPublicOrder(o: AccessOrder): PublicOrder {
     customerFirstName: o.customer.name.split(/\s+/)[0],
     pixError: awaiting && !o.pixCopyPaste && Boolean(o.paymentError),
     currency: "BRL",
+    source: o.source,
   };
 }

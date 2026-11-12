@@ -20,4 +20,5 @@ export type PublicOrder = {
   customerFirstName: string;
   pixError: boolean;
   currency: string;
+  source: string;
 };
