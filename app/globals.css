@@ -305,10 +305,7 @@ p { line-height: 1.6; }
 .doar-lead { color: #5a5f66; font-size: .92rem; line-height: 1.6; }
 .doar-lead p { margin: 0 0 12px; }
 .doar-lead strong { color: var(--ink); }
-.doar-amount { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 22px; padding: 14px 18px; border-radius: 14px; background: #fdecef; }
-.doar-amount span { font-size: .82rem; font-weight: 700; color: #8a2b3c; }
-.doar-amount strong { font-size: 1.5rem; font-weight: 900; color: var(--red-dark, #b3123a); letter-spacing: -.02em; }
-.doar-form { display: grid; gap: 14px; }
+.doar-form { display: grid; gap: 14px; margin-top: 20px; }
 .doar-form .pay-button { margin-top: 4px; }
 .doar-secure { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 0; color: #8a9099; font-size: .78rem; }
 .doar-secure svg { color: var(--green); }

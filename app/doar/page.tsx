@@ -24,11 +24,6 @@ export default function DoarPage() {
           <p>Nessa reta final, o partido conta com a força da militância e de quem esteve nas ruas e nas redes pela reeleição de Lula. Com muita gente participando, o que cada um pode doar faz diferença.</p>
         </div>
 
-        <div className="doar-amount">
-          <span>Sugestão de contribuição</span>
-          <strong>R$ 13</strong>
-        </div>
-
         <DoarForm />
 
         <p className="doar-secure"><ShieldCheck size={14} aria-hidden="true" /> Doação segura · pagamento via PIX</p>
